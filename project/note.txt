@@ -1,0 +1,21 @@
+﻿# ===== Header =====
+header = tk.Frame(root, bg="#333", height=80)
+header.grid(row=0, column=0, columnspan=3, sticky="nsew")
+
+title_label = tk.Label(header, text="My Application", font=("Arial", 14, "bold"),
+                       bg="#333", fg="white")
+title_label.pack(side="left", padx=20, pady=20)
+
+# ===== Avatar (phải) =====
+# Load ảnh và resize nhỏ lại cho vừa header
+avatar_img = Image.open("./photos/avataaars.png")
+avatar_img = avatar_img.resize((50, 50))  # chỉnh kích thước avatar
+avatar_photo = ImageTk.PhotoImage(avatar_img)
+
+def avatar_clicked(event):
+    messagebox.showinfo("Avatar", "Bạn vừa click vào avatar!")
+
+avatar_label = tk.Label(header, image=avatar_photo, bg="#333", cursor="hand2")
+avatar_label.pack(side="right", padx=20, pady=10)
+avatar_label.bind("<Button-1>", avatar_clicked)   # click được vào avatar
+

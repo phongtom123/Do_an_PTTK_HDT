@@ -8,4 +8,4 @@ docker exec -i mysql-container mysql -u root -p belu < belu.sql
 
 Bước 2: Nhập mật khẩu được thiết lập sẵn là "matkhau"
 
-Bước 3: Select thử xem 
+Bước 3: chạy thử file db trong folder

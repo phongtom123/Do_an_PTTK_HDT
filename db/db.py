@@ -7,8 +7,8 @@ def connect_db():
         host="localhost",
         port=3306,
         user="root",
-        password="matkhau",
-        database="belu"
+        password="",
+        database="bleu"
     )
 
 def show_users():

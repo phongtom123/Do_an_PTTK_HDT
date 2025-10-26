@@ -10,7 +10,7 @@ BG = "#99CDFC"
 window = ttk.Window()
 window.title("Login")
 window.geometry("800x500")
-
+window.resizable(False, False)
 
 # Grid setup
 window.rowconfigure(0, weight=1, uniform='a')

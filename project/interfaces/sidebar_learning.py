@@ -46,7 +46,7 @@ def create_sidebar_learning(root):
 
         def update_circle():
             if var.get() == value:
-                canvas.itemconfig(circle, fill="#3498db", outline="#3498db")
+                canvas.itemconfig(circle, fill="#000000", outline="#000000")
             else:
                 canvas.itemconfig(circle, fill="white", outline="#888")
 
@@ -86,7 +86,7 @@ def create_sidebar_learning(root):
     # Card câu hỏi
     # -----------------------------
     def create_question_card(parent, q_num, question, options):
-        outer = tk.Frame(parent, bg="#FFFFFF", highlightbackground="#e0e0e0", highlightthickness=1)
+        outer = tk.Frame(parent, bg="#FFFFFF", highlightbackground="#e0e0e0")
         outer.pack(pady=8, padx=8, fill="x")
 
         card = tk.Frame(outer, bg="white")
@@ -131,12 +131,12 @@ def create_sidebar_learning(root):
         activebackground="#27ae60",
         activeforeground="white",
         cursor="hand2",
-        pady=6
+        pady=6,
+        highlightthickness = 1
     )
     complete_btn.pack(fill="x", padx=40, pady=20)
 
     return sidebar
-
 
 # -----------------------------
 # Test nhanh

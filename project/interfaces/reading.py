@@ -34,7 +34,7 @@ def show_in_main(title, contents):
     reading_index = 0
 
     # 🟩 FRAME chia bố cục
-    progress_frame = tk.Frame(main_frame, bg="white", height=80)
+    progress_frame = tk.Frame(main_frame, bg="white", height=20)
     progress_frame.pack(fill="x", padx=20, pady=(15, 10))
 
     content_frame = tk.Frame(main_frame, bg="white")
@@ -46,8 +46,8 @@ def show_in_main(title, contents):
     # --------------------------------------
     # 🟩 THANH TIẾN ĐỘ
     # --------------------------------------
-    BAR_HEIGHT = 20
-    RADIUS = 10
+    BAR_HEIGHT = 10
+    RADIUS = 100
 
     canvas = tk.Canvas(progress_frame, height=BAR_HEIGHT, bg="white", highlightthickness=0)
     canvas.place(relx=0.05, rely=0.1, relwidth=0.9)
@@ -109,7 +109,7 @@ def show_in_main(title, contents):
         relief="flat",
         padx=20,
         pady=10,
-        height=18
+        height=15
     )
     text_box.pack(fill="both", expand=True, padx=30, pady=(10, 20))
 

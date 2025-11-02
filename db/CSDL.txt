@@ -1,7 +1,7 @@
 ﻿CREATE DATABASE bleu CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE bleu;
 
--- Bảng USER
+
 CREATE TABLE USER (
     user_ID INT AUTO_INCREMENT PRIMARY KEY,
     createDate DATE,
@@ -10,26 +10,28 @@ CREATE TABLE USER (
     account VARCHAR(255),
     password VARCHAR(255),
     level INT,
-    progress VARCHAR(255)
+    progress VARCHAR(255),
+    role BOOLEAN DEFAULT FALSE
 );
 
--- Bảng Unit
+
 CREATE TABLE Unit (
     unit_ID INT AUTO_INCREMENT PRIMARY KEY,
     unitName VARCHAR(255)
 );
 
--- Bảng Learn (quan hệ N-N giữa USER và Unit)
+
 CREATE TABLE Learn (
-    learn_ID INT AUTO_INCREMENT PRIMARY KEY,  -- 🔹 Thêm ID riêng để dễ quản lý
+    learn_ID INT AUTO_INCREMENT PRIMARY KEY,
     unit_ID INT NOT NULL,
     user_ID INT NOT NULL,
-    UNIQUE (unit_ID, user_ID),                -- 🔹 Vẫn đảm bảo không trùng cặp
+    is_pass BOOLEAN DEFAULT FALSE,
+    finishTime INT,
+    UNIQUE (unit_ID, user_ID),
     FOREIGN KEY (unit_ID) REFERENCES Unit(unit_ID) ON DELETE CASCADE,
     FOREIGN KEY (user_ID) REFERENCES USER(user_ID) ON DELETE CASCADE
 );
 
--- Bảng Vocab (từ vựng)
 CREATE TABLE Vocab (
     word_ID INT AUTO_INCREMENT PRIMARY KEY,
     word VARCHAR(255),
@@ -37,33 +39,56 @@ CREATE TABLE Vocab (
     difficulty VARCHAR(255)
 );
 
--- Bảng FlashCard (liên kết với từ vựng)
+
 CREATE TABLE FlashCard (
-    flashcard_ID INT AUTO_INCREMENT PRIMARY KEY, -- 🔹 ID riêng cho dễ thao tác
+    flashcard_ID INT AUTO_INCREMENT PRIMARY KEY,
     word_ID INT NOT NULL,
     user_ID INT NOT NULL,
-    UNIQUE (word_ID, user_ID),                   -- 🔹 Tránh trùng cặp người–từ
+    UNIQUE (word_ID, user_ID),
     FOREIGN KEY (word_ID) REFERENCES Vocab(word_ID) ON DELETE CASCADE,
     FOREIGN KEY (user_ID) REFERENCES USER(user_ID) ON DELETE CASCADE
 );
 
--- Bảng Reading (bài đọc)
+CREATE TABLE UserFC (
+    flashcard_ID INT NOT NULL,
+    user_ID INT NOT NULL,
+    PRIMARY KEY (flashcard_ID, user_ID),
+    FOREIGN KEY (flashcard_ID) REFERENCES FlashCard(flashcard_ID) ON DELETE CASCADE,
+    FOREIGN KEY (user_ID) REFERENCES USER(user_ID) ON DELETE CASCADE
+);
+
+CREATE TABLE FCVocab (
+    flashcard_ID INT NOT NULL,
+    word_ID INT NOT NULL,
+    synonym VARCHAR(255),
+    PRIMARY KEY (flashcard_ID, word_ID),
+    FOREIGN KEY (flashcard_ID) REFERENCES FlashCard(flashcard_ID) ON DELETE CASCADE,
+    FOREIGN KEY (word_ID) REFERENCES Vocab(word_ID) ON DELETE CASCADE
+);
+
+CREATE TABLE Lesson (
+    lesson_ID INT AUTO_INCREMENT PRIMARY KEY,
+    unit_ID INT NOT NULL,
+    lessonName VARCHAR(255),
+    FOREIGN KEY (unit_ID) REFERENCES Unit(unit_ID) ON DELETE CASCADE
+);
+
 CREATE TABLE Reading (
     read_ID INT AUTO_INCREMENT PRIMARY KEY,
+    lesson_ID INT NOT NULL,
     readContent TEXT,
-    unit_ID INT,
-    FOREIGN KEY (unit_ID) REFERENCES Unit(unit_ID) ON DELETE CASCADE
+    question_ID INT,
+    FOREIGN KEY (lesson_ID) REFERENCES Lesson(lesson_ID) ON DELETE CASCADE
 );
 
--- Bảng Listening (bài nghe)
 CREATE TABLE Listening (
     listen_ID INT AUTO_INCREMENT PRIMARY KEY,
+    lesson_ID INT NOT NULL,
     linkAudio TEXT,
-    unit_ID INT,
-    FOREIGN KEY (unit_ID) REFERENCES Unit(unit_ID) ON DELETE CASCADE
+    question_ID INT,
+    FOREIGN KEY (lesson_ID) REFERENCES Lesson(lesson_ID) ON DELETE CASCADE
 );
 
--- Bảng Question (câu hỏi)
 CREATE TABLE Question (
     question_ID INT AUTO_INCREMENT PRIMARY KEY,
     content TEXT,
@@ -73,12 +98,11 @@ CREATE TABLE Question (
     FOREIGN KEY (unit_ID) REFERENCES Unit(unit_ID) ON DELETE CASCADE
 );
 
--- Bảng UserAnswer (câu trả lời của người dùng)
 CREATE TABLE UserAnswer (
     question_ID INT,
     user_ID INT,
-    content TEXT,
     unit_ID INT,
+    content TEXT,
     result BOOLEAN,
     PRIMARY KEY (question_ID, user_ID),
     FOREIGN KEY (question_ID) REFERENCES Question(question_ID) ON DELETE CASCADE,

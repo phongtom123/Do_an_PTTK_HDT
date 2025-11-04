@@ -8,12 +8,22 @@ def insert_random_data():
         conn = mysql.connector.connect(
             host="localhost",
             user="root",
-            password="",          # nếu có mật khẩu thì điền vào đây
+            password="",  # nếu có mật khẩu thì điền vào đây
             database="bleu"
         )
         cursor = conn.cursor()
-
         print("✅ Kết nối thành công tới cơ sở dữ liệu 'bleu'.\n")
+
+        # ======================================================
+        # 🧹 XÓA DỮ LIỆU CŨ (nếu cần chạy lại)
+        # ======================================================
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+        tables = ["UserAnswer", "FVocab", "FlashCard", "Learn", "Question", "Listening", "Reading", "Lesson", "Vocab", "Unit", "USER"]
+        for t in tables:
+            cursor.execute(f"TRUNCATE TABLE {t};")
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
+        conn.commit()
+        print("🧹 Đã xóa dữ liệu cũ trong toàn bộ bảng.\n")
 
         # ==== NHẬP SỐ LƯỢNG NGẪU NHIÊN ====
         num_users = int(input("👤 Số lượng người dùng cần thêm: "))
@@ -24,7 +34,7 @@ def insert_random_data():
         # ======================================================
         # 1️⃣ UNIT
         # ======================================================
-        units = [(f"Unit {i+1}: Lesson {i+1}",) for i in range(num_units)]
+        units = [(f"Unit {i+1}",) for i in range(num_units)]
         cursor.executemany("INSERT INTO Unit (unitName) VALUES (%s);", units)
         conn.commit()
         cursor.execute("SELECT unit_ID FROM Unit;")
@@ -43,10 +53,9 @@ def insert_random_data():
                 f"user{i+1}",
                 "123456",
                 random.randint(1, 5),
-                f"Đang học Unit {random.choice(unit_ids)}",
+                round(random.uniform(0, 100), 2),
                 random.choice([True, False])
             ))
-
         cursor.executemany("""
             INSERT INTO USER (createDate, name, email, account, password, level, progress, role)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
@@ -59,18 +68,8 @@ def insert_random_data():
         # ======================================================
         # 3️⃣ VOCAB
         # ======================================================
-        vocab = []
-        for i in range(num_vocab):
-            vocab.append((
-                f"word{i+1}",
-                f"nghĩa {i+1}",
-                random.choice(["easy", "medium", "hard"])
-            ))
-
-        cursor.executemany("""
-            INSERT INTO Vocab (word, meaning, difficulty)
-            VALUES (%s, %s, %s);
-        """, vocab)
+        vocab = [(f"word{i+1}", f"nghĩa {i+1}", random.choice(["Easy", "Medium", "Hard"])) for i in range(num_vocab)]
+        cursor.executemany("INSERT INTO Vocab (word, meaning, difficulty) VALUES (%s, %s, %s);", vocab)
         conn.commit()
         cursor.execute("SELECT word_ID FROM Vocab;")
         word_ids = [w[0] for w in cursor.fetchall()]
@@ -79,9 +78,7 @@ def insert_random_data():
         # ======================================================
         # 4️⃣ LESSON (mỗi Unit có ít nhất 1 Lesson)
         # ======================================================
-        lessons = []
-        for i, uid in enumerate(unit_ids):
-            lessons.append((uid, f"Lesson của Unit {uid}",))
+        lessons = [(uid, f"Lesson của Unit {uid}") for uid in unit_ids]
         cursor.executemany("INSERT INTO Lesson (unit_ID, lessonName) VALUES (%s, %s);", lessons)
         conn.commit()
         cursor.execute("SELECT lesson_ID FROM Lesson;")
@@ -89,31 +86,43 @@ def insert_random_data():
         print(f"✅ Đã thêm {len(lesson_ids)} Lesson.")
 
         # ======================================================
-        # 5️⃣ READING & LISTENING (kế thừa từ Lesson)
+        # 5️⃣ READING & LISTENING (mỗi Lesson chỉ 1 loại)
         # ======================================================
-        readings = [(lid, f"Nội dung đọc cho Lesson {lid}", random.choice([None, None, None])) for lid in lesson_ids]
-        cursor.executemany("INSERT INTO Reading (lesson_ID, readContent, question_ID) VALUES (%s, %s, %s);", readings)
+        readings = []
+        listenings = []
 
-        listenings = [(lid, f"https://audio.fake/unit{lid}.mp3", random.choice([None, None, None])) for lid in lesson_ids]
-        cursor.executemany("INSERT INTO Listening (lesson_ID, linkAudio, question_ID) VALUES (%s, %s, %s);", listenings)
+        for lid in lesson_ids:
+            if random.random() < 0.6:  # 60% là Reading
+                readings.append((lid, f"Nội dung đọc cho Lesson {lid}"))
+            else:  # 40% là Listening
+                listenings.append((lid, f"https://audio.fake/lesson{lid}.mp3"))
+
+        if readings:
+            cursor.executemany("INSERT INTO Reading (lesson_ID, readContent) VALUES (%s, %s);", readings)
+        if listenings:
+            cursor.executemany("INSERT INTO Listening (lesson_ID, linkAudio) VALUES (%s, %s);", listenings)
         conn.commit()
         print(f"✅ Đã thêm {len(readings)} Reading và {len(listenings)} Listening.")
 
         # ======================================================
-        # 6️⃣ QUESTION
+        # 6️⃣ QUESTION (thuộc về Lesson)
         # ======================================================
         questions = []
         for i in range(num_questions):
-            unit_id = random.choice(unit_ids)
+            lesson_id = random.choice(lesson_ids)
             questions.append((
+                lesson_id,
                 f"Nội dung câu hỏi {i+1}",
-                unit_id,
-                f"Giải thích cho câu hỏi {i+1}",
-                f"Kết quả {i+1}"
+                f"Option A-{i+1}",
+                f"Option B-{i+1}",
+                f"Option C-{i+1}",
+                f"Option D-{i+1}",
+                f"Giải thích câu hỏi {i+1}",
+                f"Đáp án đúng là Option {random.choice(['A', 'B', 'C', 'D'])}"
             ))
         cursor.executemany("""
-            INSERT INTO Question (content, unit_ID, explanation, result)
-            VALUES (%s, %s, %s, %s);
+            INSERT INTO Question (lesson_ID, content, option1, option2, option3, option4, explanation, result)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
         """, questions)
         conn.commit()
         cursor.execute("SELECT question_ID FROM Question;")
@@ -121,84 +130,51 @@ def insert_random_data():
         print(f"✅ Đã thêm {num_questions} câu hỏi.")
 
         # ======================================================
-        # 7️⃣ LEARN (N–N USER–UNIT)
+        # 7️⃣ LEARN (N–N USER–LESSON)
         # ======================================================
         learn_records = []
         seen = set()
         for uid in user_ids:
-            unit_id = random.choice(unit_ids)
-            if (uid, unit_id) not in seen:
-                learn_records.append((unit_id, uid, random.choice([True, False]), random.randint(30, 180)))
-                seen.add((uid, unit_id))
+            for _ in range(random.randint(1, 3)):
+                lid = random.choice(lesson_ids)
+                if (uid, lid) not in seen:
+                    learn_records.append((uid, lid, random.choice([True, False]), round(random.uniform(0, 100), 2), random.randint(30, 180)))
+                    seen.add((uid, lid))
         cursor.executemany("""
-            INSERT INTO Learn (unit_ID, user_ID, is_pass, finishTime)
-            VALUES (%s, %s, %s, %s);
+            INSERT INTO Learn (user_ID, lesson_ID, is_pass, progress, finishTime)
+            VALUES (%s, %s, %s, %s, %s);
         """, learn_records)
         conn.commit()
         print(f"✅ Đã thêm {len(learn_records)} bản ghi Learn.")
 
         # ======================================================
-        # 8️⃣ FLASHCARD (mỗi user học 3 từ)
+        # 8️⃣ FLASHCARD (mỗi user học vài từ)
         # ======================================================
-        flashcards = []
-        seen_flash = set()
-        for uid in user_ids:
-            sampled_words = random.sample(word_ids, min(3, len(word_ids)))
-            for wid in sampled_words:
-                if (uid, wid) not in seen_flash:
-                    flashcards.append((wid, uid))
-                    seen_flash.add((uid, wid))
-        cursor.executemany("""
-            INSERT INTO FlashCard (word_ID, user_ID)
-            VALUES (%s, %s);
-        """, flashcards)
+        flashcards = [(uid,) for uid in user_ids for _ in range(random.randint(1, 3))]
+        cursor.executemany("INSERT INTO FlashCard (user_ID) VALUES (%s);", flashcards)
         conn.commit()
         cursor.execute("SELECT flashcard_ID FROM FlashCard;")
         flashcard_ids = [f[0] for f in cursor.fetchall()]
-        print(f"✅ Đã thêm {len(flashcards)} FlashCard.")
+        print(f"✅ Đã thêm {len(flashcard_ids)} FlashCard.")
 
         # ======================================================
-        # 9️⃣ USERFC (liên kết user–flashcard)
+        # 9️⃣ FVocab (liên kết flashcard–vocab)
         # ======================================================
-        userfc = []
-        for fc in flashcard_ids:
-            uid = random.choice(user_ids)
-            userfc.append((fc, uid))
-        cursor.executemany("INSERT INTO UserFC (flashcard_ID, user_ID) VALUES (%s, %s);", userfc)
+        fcvocab = [(fc, random.choice(word_ids), f"Từ đồng nghĩa của word {random.choice(word_ids)}") for fc in flashcard_ids]
+        cursor.executemany("INSERT INTO FVocab (flashcard_ID, word_ID, synonym) VALUES (%s, %s, %s);", fcvocab)
         conn.commit()
-        print(f"✅ Đã thêm {len(userfc)} bản ghi UserFC.")
+        print(f"✅ Đã thêm {len(fcvocab)} bản ghi FVocab.")
 
         # ======================================================
-        # 🔟 FCVOCAB (liên kết flashcard–vocab)
-        # ======================================================
-        fcvocab = []
-        for fc in flashcard_ids:
-            wid = random.choice(word_ids)
-            fcvocab.append((fc, wid, f"Từ đồng nghĩa của word {wid}"))
-        cursor.executemany("""
-            INSERT INTO FCVocab (flashcard_ID, word_ID, synonym)
-            VALUES (%s, %s, %s);
-        """, fcvocab)
-        conn.commit()
-        print(f"✅ Đã thêm {len(fcvocab)} bản ghi FCVocab.")
-
-        # ======================================================
-        # 1️⃣1️⃣ USERANSWER
+        # 🔟 USERANSWER (user – question)
         # ======================================================
         answers = []
         for uid in user_ids:
             qid = random.choice(question_ids)
-            unit_id = random.choice(unit_ids)
-            if random.random() < 0.5:
-                content = None
-                result = None
-            else:
-                content = f"Câu trả lời của user {uid} cho câu {qid}"
-                result = random.choice([True, False])
-            answers.append((qid, uid, unit_id, content, result))
+            answers.append((qid, uid, f"Câu trả lời của user {uid} cho câu {qid}", random.choice([True, False])))
         cursor.executemany("""
-            INSERT INTO UserAnswer (question_ID, user_ID, unit_ID, content, result)
-            VALUES (%s, %s, %s, %s, %s);
+            INSERT INTO UserAnswer (question_ID, user_ID, content, isCorrect)
+            VALUES (%s, %s, %s, %s);
         """, answers)
         conn.commit()
         print(f"✅ Đã thêm {len(answers)} UserAnswer.")
@@ -213,6 +189,7 @@ def insert_random_data():
             cursor.close()
             conn.close()
             print("🔒 Đã đóng kết nối MySQL.")
+
 
 if __name__ == "__main__":
     insert_random_data()

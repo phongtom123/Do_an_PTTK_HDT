@@ -26,7 +26,7 @@ def show_users():
     try:
         cursor.execute("""
             SELECT user_ID, createDate, name, email, account, level, progress
-            FROM `USER`
+            FROM USER
         """)
         rows = cursor.fetchall()
 
@@ -69,18 +69,20 @@ def show_lessons():
     try:
         cursor.execute("""
             SELECT 
-                u.unitName,
                 l.lesson_ID,
                 l.lessonName,
+                u.unitName,
                 CASE
                     WHEN r.read_ID IS NOT NULL THEN 'Reading'
                     WHEN li.listen_ID IS NOT NULL THEN 'Listening'
-                    ELSE 'Unknown'
-                END AS lessonType
+                    ELSE 'Lesson'
+                END AS lessonType,
+                COALESCE(r.readContent, li.linkAudio, '') AS content
             FROM Lesson l
             JOIN Unit u ON l.unit_ID = u.unit_ID
             LEFT JOIN Reading r ON l.lesson_ID = r.lesson_ID
             LEFT JOIN Listening li ON l.lesson_ID = li.lesson_ID
+            ORDER BY l.lesson_ID;
         """)
         
         rows = cursor.fetchall()
@@ -137,12 +139,18 @@ notebook.add(frame_unit, text="📘 Unit")
 
 # --- Tab 3: Lesson ---
 frame_lesson = Frame(notebook, bg="#f5f5f5")
-columns_lesson = ("Loại bài", "ID", "Thuộc Unit", "Nội dung / Link")
+columns_lesson = ("ID", "Tên bài học", "Thuộc Unit", "Loại bài", "Nội dung / Link")
 tree_lesson = ttk.Treeview(frame_lesson, columns=columns_lesson, show="headings")
 
 for col in columns_lesson:
     tree_lesson.heading(col, text=col)
-    tree_lesson.column(col, width=200, anchor="center")
+    if col in ("ID", "Loại bài"):
+        tree_lesson.column(col, width=100, anchor="center")
+    elif col == "Nội dung / Link":
+        tree_lesson.column(col, width=250)
+    else:
+        tree_lesson.column(col, width=180, anchor="center")
+
 tree_lesson.pack(fill=BOTH, expand=True, padx=10, pady=10)
 Button(frame_lesson, text="Tải danh sách Lesson", command=show_lessons, bg="#FF9800", fg="white").pack(pady=5)
 notebook.add(frame_lesson, text="📖 Lesson")

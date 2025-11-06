@@ -1,0 +1,2 @@
+- Khi tạo 1 đường dẫn tương đối cần chú ý vị trí khởi chạy sẽ ảnh hưởng đến đường dẫn.
+=> Giải pháp là dùng 1 ua hằng luôn trỏ đến file của script đó (a.k.a __file__)

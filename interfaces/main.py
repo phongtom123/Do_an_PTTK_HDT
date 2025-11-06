@@ -11,10 +11,10 @@ root.title("BulaBuluuuu")
 root.geometry("1100x700")
 root.configure(bg="#FFFFFF")
 
-# --- main frame ---
+#main frame 
 main_frame = create_main_frame(root)
 
-# --- sidebar phải (có thể bị thay thế) ---
+# sidebar phải (có thể bị thay thế) 
 sidebar_right_ref = [None]
 
 def recreate_sidebar_right():
@@ -25,7 +25,7 @@ def recreate_sidebar_right():
 # Tạo sidebar_right mặc định
 recreate_sidebar_right()
 
-# --- trạng thái toàn cục ---
+# trạng thái toàn cục 
 in_reading_mode = [False]  # True khi đang trong bài học
 
 def reset_sidebar():
@@ -42,9 +42,9 @@ def reset_sidebar():
         recreate_sidebar_right()
         in_reading_mode[0] = False
 
-# --- hàm hiển thị nội dung chính ---
+#  hàm hiển thị nội dung chính 
 def show_in_main(title, contents):
-    reset_sidebar()  # ✅ luôn reset nếu đang ở trong bài học
+    reset_sidebar()  #  luôn reset nếu đang ở trong bài học
 
     for w in main_frame.winfo_children():
         w.destroy()
@@ -62,7 +62,7 @@ def show_in_main(title, contents):
             )
         ).pack(pady=8)
 
-        elif title == "Listening":  # ✅ thêm khối này
+        elif title == "Listening":  
             tk.Button(
             main_frame, text=item, font=("Arial",14),
             bg="#1abc9c", fg="white", width=30, height=2, bd=3,

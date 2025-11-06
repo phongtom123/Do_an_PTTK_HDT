@@ -99,25 +99,53 @@ def show_in_main(title, contents):
     title_label.pack(side="left")
 
     # --------------------------------------
-    # 🟦 VÙNG NỘI DUNG
-    # --------------------------------------
-    text_box = tk.Text(
-        content_frame,
-        wrap="word",
-        font=("Arial", 13),
-        bg="#F8F9FA",
-        relief="flat",
-        padx=20,
-        pady=10,
-        height=15
-    )
-    text_box.pack(fill="both", expand=True, padx=30, pady=(10, 20))
+# 🟦 VÙNG NỘI DUNG
+# --------------------------------------
+text_box = tk.Text(
+    content_frame,
+    wrap="word",
+    font=("Arial", 13),
+    bg="#F8F9FA",
+    relief="flat",
+    padx=20,
+    pady=10,
+    height=15
+)
+text_box.pack(fill="both", expand=True, padx=30, pady=(10, 20))
 
-    def update_reading():
-        text_box.delete("1.0", "end")
-        text_box.insert("1.0", readings[reading_index])
 
-    update_reading()
+# 🟢 Tạo frame chứa 2 nút trong Textbox
+button_container = tk.Frame(text_box, bg="#FFFFFF")
+
+btn_learn = tk.Button(
+    button_container,
+    text="Chế độ học",
+    font=("Arial", 10, "bold"),
+    bg="#2196F3",
+    fg="white",
+    relief="flat",
+    width=12
+)
+
+btn_exercise = tk.Button(
+    button_container,
+    text="Bài tập",
+    font=("Arial", 10, "bold"),
+    bg="#8BC34A",
+    fg="white",
+    relief="flat",
+    width=12
+)
+
+btn_learn.pack(side="left", padx=10, pady=5)
+btn_exercise.pack(side="left", padx=10, pady=5)
+
+
+def update_reading():
+    text_box.delete("1.0", "end")
+    text_box.insert("1.0", readings[reading_index] + "\n\n")
+    text_box.window_create("end", window=button_container)  # ✅ Nhúng nút vào Text
+
 
     # --------------------------------------
     # 🟨 NÚT Ở DƯỚI CÙNG + TIẾN ĐỘ

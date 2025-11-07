@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
+import os
 
-class LoginForm:
+class SignupForm:
     def __init__(self, window):
         self.window = window
         self.window.geometry("1166x718")
@@ -12,12 +13,12 @@ class LoginForm:
 
         self.username_var = tk.StringVar(value="default value")
         self.password_var = tk.StringVar(value="default value")
-
+        self.email_var = tk.StringVar(value="default value")
         height = self.window.winfo_height()
         width = self.window.winfo_width()
 
         # =================Start background image=============
-        self.bg_frame = Image.open("../assets/bg/background1.png").resize((width, height))
+        self.bg_frame = Image.open(os.path.dirname(__file__) + "/../assets/bg/background1.png").resize((width, height))
         photo = ImageTk.PhotoImage(self.bg_frame)
         self.bg_panel = ttk.Label(self.window, image=photo)
         self.bg_panel.image = photo #?
@@ -39,29 +40,53 @@ class LoginForm:
         # =================End login frame====================
 
         # =================Start left side image==============
-        self.side_image = Image.open("../assets/vector.png")
+        self.side_image = Image.open(os.path.dirname(__file__) + "/../assets/vector.png")
         photo = ImageTk.PhotoImage(self.side_image)
         self.side_image = tk.Label(self.lgn_frame, image=photo, bg= "#040405")
         self.side_image.image = photo  # ?
         self.side_image.place(x=5, y=100)
         # =================End left side image================
 
-        # =================Start sign in image,label======================
-        self.sign_in_image = Image.open("../assets/login_avatar.png")
-        photo = ImageTk.PhotoImage(self.sign_in_image)
-        self.sign_in_image = tk.Label(self.lgn_frame, image=photo, bg="#040405")
-        self.sign_in_image.image = photo  # ?
-        self.sign_in_image.place(x=620, y=130)
-
+        # =================Start sign in,label======================
         self.sign_in_label = tk.Label(
             self.lgn_frame,
-            text="Sign In",
+            text="Sign up",
             bg="#040405",
             fg="white",
             font=("yu gothic ui", 17, "bold")
         )
-        self.sign_in_label.place(x=650, y=240)
+        self.sign_in_label.place(x=670, y=90)
         # =================End sign in image,label======================
+
+        # =================Start email===============================
+        self.email_label = tk.Label(
+            self.lgn_frame,
+            text="Email :",
+            bg="#040405",
+            fg="#4f4e4d",
+            font=("yu gothic ui", 13, "bold")
+        )
+        self.email_label.place(x=550, y=150)
+
+        self.email_entry = tk.Entry(
+            self.lgn_frame,
+            highlightthickness=0,
+            relief=tk.FLAT, # Tạo viền 3 chiều ( ảo giác sâu)
+            bg="#040405",
+            fg="#6b6a69",
+            font=("yu gothic ui", 13, "bold"),
+            textvariable= self.email_var
+        )
+        self.email_entry.place(x=580, y=180, width=120)
+
+        self.email_line = tk.Canvas(
+            self.lgn_frame,
+            width=300,
+            height=2.0,
+            bg="#bdb9b1",
+            highlightthickness=0
+        )
+        self.email_line.place(x=550, y=210)
 
         # =================Start username===============================
         self.username_label = tk.Label(
@@ -95,7 +120,7 @@ class LoginForm:
         # ==================End username====================
 
         # ==================Start username icon=============
-        self.username_icon = Image.open("../assets/icons/username_icon.png")
+        self.username_icon = Image.open(os.path.dirname(__file__) + "/../assets/icons/username_icon.png")
         photo = ImageTk.PhotoImage(self.username_icon)
         self.username_icon = tk.Label(self.lgn_frame, image=photo, bg="#040405")
         self.username_icon.image = photo  # ?
@@ -135,7 +160,7 @@ class LoginForm:
         # ==================End password====================
 
         # ==================Start password icon=============
-        self.password_icon = Image.open("../assets/icons/password_icon.png")
+        self.password_icon = Image.open(os.path.dirname(__file__) + "/../assets/icons/password_icon.png")
         photo = ImageTk.PhotoImage(self.password_icon)
         self.password_icon = tk.Label(self.lgn_frame, image=photo, bg="#040405")
         self.password_icon.image = photo  # ?
@@ -144,7 +169,7 @@ class LoginForm:
 
         # ==================Start login button==============
         self.lgn_button = tk.Button(self.lgn_frame)
-        self.lgn_button_label = Image.open("../assets/btn1.png") # Dùng image để tạo nút tròn ảo
+        self.lgn_button_label = Image.open(os.path.dirname(__file__) + "/../assets/btn1.png") # Dùng image để tạo nút tròn ảo
         photo = ImageTk.PhotoImage(self.lgn_button_label)
         self.lgn_button_label = tk.Label(self.lgn_frame, image=photo, bg="#040405")
         self.lgn_button_label.image = photo  # ?
@@ -190,7 +215,7 @@ class LoginForm:
         )
         self.sign_label.place(x=550, y=553)
 
-        self.sign_up_label = Image.open("../assets/register.png")
+        self.sign_up_label = Image.open(os.path.dirname(__file__) + "/../assets/register.png")
         photo = ImageTk.PhotoImage(self.sign_up_label)
         self.sign_up_label = tk.Label(
             self.lgn_frame,
@@ -206,7 +231,7 @@ class LoginForm:
 
 
         # ================Show/hide password============
-        self.show_image = Image.open("../assets/icons/show.png")
+        self.show_image = Image.open(os.path.dirname(__file__) + "/../assets/icons/show.png")
         photo = ImageTk.PhotoImage(self.show_image)
         self.show_button = tk.Label(
             self.lgn_frame,
@@ -224,7 +249,7 @@ class LoginForm:
 
 def page():
     window = tk.Tk()
-    LoginForm(window)
+    SignupForm(window)
     window.mainloop()
 
 if __name__ == "__main__":

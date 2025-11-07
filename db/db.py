@@ -1,3 +1,9 @@
+# Để query cần đảm bao 2 yếu tố query và params tách biệt nhay và được liên kết bởi trình giữ chỗ.
+# Ex: query = "insert into tbl(col1, col2) values (%s, %s)"
+#     params = ("val1", "val2")
+#     => pd.ddl_dml_operator(query, params)
+
+
 import mysql.connector
 import pandas as pd
 from dotenv import load_dotenv
@@ -27,15 +33,15 @@ class db:
         except mysql.connector.Error as err:
                 print(f"Có lỗi xảy ra. Thông tin lỗi: {err}")
 
-    def query(self, query: str) -> pd.DataFrame:
+    def query(self, query: str, params: tuple = None) -> pd.DataFrame:
          '''Đọc toàn bộ kết quả và trả về 1 dataframe'''
-         df = pd.read_sqL(query, self.connect)
+         df = pd.read_sql(query, self.connect, params=params)
          return pd.DataFrame(df)
     
-    def dml_ddl_operator(self,query: str):
+    def dml_ddl_operator(self, query: str, params: tuple = None):
          '''Dùng để thao tác thêm, sửa, xóa với db'''
          cursor = self.connect.cursor()
-         cursor.execute(query)
+         cursor.execute(cursor.execute(query, params))
     
     def close(self):
          self.connect.close()

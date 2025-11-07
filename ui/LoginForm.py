@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
-from logic import auth
+from logic.auth import LoginManager
 import os
 
 class LoginForm:
@@ -147,7 +147,7 @@ class LoginForm:
         # ==================End password icon===============
 
         # ==================Start login button==============
-        self.lgn_button = tk.Button(self.lgn_frame, command=self.authentic)
+        self.lgn_button = tk.Button(self.lgn_frame)
         self.lgn_button_label = Image.open(self.base_dir + "/../assets/btn1.png") # Dùng image để tạo nút tròn ảo
         photo = ImageTk.PhotoImage(self.lgn_button_label)
         self.lgn_button_label = tk.Label(self.lgn_frame, image=photo, bg="#040405")
@@ -164,6 +164,7 @@ class LoginForm:
             cursor="hand2", # Tạo cursor cái tay
             activebackground="#3047ff", # Tạo hoạt ảnh khi ấn
             fg="white",
+            command=self.authentic
         )
         self.login.place(x=20, y=10)
     # ======================End login button===================
@@ -229,7 +230,7 @@ class LoginForm:
             pwd = self.password_var.get()
             print(f"Username: {username}")
             print(f"Password: {pwd}")
-            login_mnr = auth.LoginManager()
+            login_mnr = LoginManager()
             if login_mnr.auth(username= username, password= pwd):
                 print("Đăng nhập thành công")
             else:

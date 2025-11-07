@@ -74,7 +74,7 @@ def show_in_main(title, contents):
 
     else:
         tk.Button(
-            main_frame, text=item, font=("Arial",14),
+            main_frame, text=       item, font=("Arial",14),
             bg="#3498db", fg="white", width=30, height=2, bd=3,
             command=lambda x=item: show_message(f"{title} - {x}")
         ).pack(pady=8)

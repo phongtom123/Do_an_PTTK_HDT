@@ -1,59 +1,74 @@
 ﻿import tkinter as tk
 
-root = tk.Tk()
-root.geometry("500x200")
-root.configure(bg="white")
+def create_header(root, part_text="Phần 9", title_text="Bài mới mỗi ngày", color="#1da9fe"):
+    """Tạo thanh tiêu đề tự mở rộng ngang (giống lesson_cards)."""
+    wrapper = tk.Frame(root, bg="#f9f9f9")
+    wrapper.pack(fill="x", padx=20, pady=15)  
 
-# Canvas để vẽ thanh
-canvas = tk.Canvas(root, width=400, height=30, bg="#FFFFFF", highlightthickness=0)
-canvas.pack(pady=50)
+    header = tk.Frame(wrapper, bg=color, height=80)
+    header.pack(fill="x")                     
+    header.pack_propagate(False)              
 
-# Hàm tiện ích: vẽ hình chữ nhật bo tròn
-def create_round_rect(canvas, x1, y1, x2, y2, r=15, **kwargs):
-    # Giới hạn bo góc không vượt quá nửa chiều cao/thấp
-    r = min(r, abs(x2 - x1) / 2, abs(y2 - y1) / 2)
-    return [
-        canvas.create_arc(x1, y1, x1+r*2, y1+r*2, start=90, extent=90, style=tk.PIESLICE, **kwargs),
-        canvas.create_arc(x2-r*2, y1, x2, y1+r*2, start=0, extent=90, style=tk.PIESLICE, **kwargs),
-        canvas.create_arc(x2-r*2, y2-r*2, x2, y2, start=270, extent=90, style=tk.PIESLICE, **kwargs),
-        canvas.create_arc(x1, y2-r*2, x1+r*2, y2, start=180, extent=90, style=tk.PIESLICE, **kwargs),
-        canvas.create_rectangle(x1+r, y1, x2-r, y2, **kwargs),
-        canvas.create_rectangle(x1, y1+r, x2, y2-r, **kwargs)
+    tk.Label(
+        header, text=f"← {part_text}", bg=color,
+        fg="white", font=("Arial", 10, "bold"), anchor="w"
+    ).pack(anchor="w", padx=20, pady=(10, 0))
+
+    tk.Label(
+        header, text=title_text, bg=color,
+        fg="white", font=("Arial", 14, "bold"), anchor="w"
+    ).pack(anchor="w", padx=20, pady=(2, 10))
+
+    return header
+
+
+def create_lesson_cards(root, lessons):
+    """Danh sách thẻ học phần (không bo tròn)."""
+    container = tk.Frame(root, bg="#f9f9f9")
+    container.pack(fill="both", expand=True, padx=20, pady=10)
+
+    def create_card(parent, title, status_text, button_text="ÔN TẬP"):
+        outer = tk.Frame(parent, bg="white", highlightbackground="#e0e0e0", highlightthickness=1)
+        outer.pack(pady=10, fill="x")
+
+        inner = tk.Frame(outer, bg="white")
+        inner.pack(fill="x", padx=20, pady=15)
+
+        left = tk.Frame(inner, bg="white")
+        left.pack(side="left", fill="x", expand=True)
+
+        tk.Label(left, text=title, font=("Arial", 13, "bold"), bg="white", fg="#333").pack(anchor="w")
+        tk.Label(left, text=f"✅ {status_text}", font=("Arial", 11, "bold"), bg="white", fg="#00AA00").pack(anchor="w", pady=(5,0))
+
+        tk.Button(inner, text=button_text,
+                  font=("Arial", 11, "bold"),
+                  fg="#1da9fe", bg="white",
+                  bd=1, relief="solid",
+                  activebackground="#ecf5ff",
+                  cursor="hand2",
+                  width=10, height=1).pack(side="right")
+
+        return outer
+
+    for lesson in lessons:
+        create_card(container, lesson["title"], lesson["status"])
+
+    return container
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.geometry("600x550")
+    root.title("Danh sách học phần")
+
+    create_header(root, part_text="Phần 9", title_text="Bài mới mỗi ngày", color="#1da9fe")
+
+    sample_lessons = [
+        {"title": "Unit 1", "status": "HOÀN THÀNH!"},
+        {"title": "Unit 2", "status": "HOÀN THÀNH!"},
+        {"title": "Unit 3", "status": "HOÀN THÀNH!"},
+        {"title": "Unit 4", "status": "HOÀN THÀNH"},
     ]
 
-# Nền bo tròn
-create_round_rect(canvas, 0, 0, 400, 30, r=15, fill="#E0E0E0", outline="")
+    create_lesson_cards(root, sample_lessons)
 
-progress = 0
-
-def draw_progress_bar(value):
-    """Vẽ lại thanh tiến độ bo tròn mượt"""
-    canvas.delete("bar")
-    width = 4 * value  # 100% = 400px
-    r = 15
-
-    if value <= 0:
-        return
-    elif value >= 100:
-        # Thanh đầy => bo tròn cả 2 đầu
-        create_round_rect(canvas, 0, 0, 400, 30, r=r, fill="#4CAF50", outline="", tags="bar")
-    else:
-        # Thanh giữa chừng => bo tròn đầu trái, đầu phải vuông
-        canvas.create_arc(0, 0, r*2, r*2, start=90, extent=90, style=tk.PIESLICE, fill="#4CAF50", outline="", tags="bar")
-        canvas.create_arc(0, 30-r*2, r*2, 30, start=180, extent=90, style=tk.PIESLICE, fill="#4CAF50", outline="", tags="bar")
-        canvas.create_rectangle(r, 0, width, 30, fill="#4CAF50", outline="", tags="bar")
-
-# Hàm cập nhật tiến độ
-def update_progress(delta):
-    global progress
-    progress = max(0, min(100, progress + delta))
-    draw_progress_bar(progress)
-
-# Vẽ lần đầu
-draw_progress_bar(progress)
-
-# Nút điều khiển
-tk.Button(root, text="Tăng 10%", command=lambda: update_progress(10)).pack(side="left", padx=20)
-tk.Button(root, text="Giảm 10%", command=lambda: update_progress(-10)).pack(side="right", padx=20)
-
-root.mainloop()
+    root.mainloop()

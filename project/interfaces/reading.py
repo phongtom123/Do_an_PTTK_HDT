@@ -1,8 +1,10 @@
 ﻿import tkinter as tk
+from PIL import Image, ImageTk  # 🖼️ Thêm để xử lý ảnh
 from main_content import create_main_frame, show_message
 from sidebar_left import create_sidebar_left
-from sidebar_right import create_sidebar_right
+from sidebar_learning import create_sidebar_learning
 from controller.unit_controller import get_all_units
+
 
 root = tk.Tk()
 root.title("BulaBuluuuu")
@@ -15,46 +17,40 @@ root.configure(bg="#FFFFFF")
 main_frame = create_main_frame(root)
 
 # --------------------------------------
-# 2) Hàm show_in_main (bo tròn, co giãn tự động)
+# 2) Hàm show_in_main — Reading + Progress tách riêng
 # --------------------------------------
 def show_in_main(title, contents):
     for w in main_frame.winfo_children():
         w.destroy()
 
-    # 🟢 Tiêu đề
-    if title:
-        tk.Label(
-            main_frame,
-            text=title,
-            font=("Arial", 16, "bold"),
-            bg="white"
-        ).pack(pady=10)
+    readings = [
+        "Reading 1:\n\nThe elephant is the largest land animal on Earth. It has a trunk, big ears, and thick grey skin. Elephants live in herds and are known for their intelligence and strong social bonds.",
+        "Reading 2:\n\nThe cheetah is the fastest land animal. It can run up to 120 kilometers per hour in short bursts. Its spotted coat helps it blend in with the tall grass while hunting.",
+        "Reading 3:\n\nThe penguin is a flightless bird that lives in cold regions like Antarctica. Although it cannot fly, it is an excellent swimmer and uses its wings to move through the water.",
+        "Reading 4:\n\nThe dolphin is a friendly and intelligent marine mammal. Dolphins communicate through clicks and whistles, and they often travel together in groups called pods.",
+        "Reading 5:\n\nThe panda is native to China and is known for its distinctive black-and-white fur. Pandas mainly eat bamboo and spend most of their day eating and resting."
+    ]
 
-    # 🔹 Nút nội dung (nếu có)
-    if contents:
-        for item in contents:
-            tk.Button(
-                main_frame,
-                text=item,
-                font=("Arial", 14),
-                command=lambda x=item: show_message(f"{title} - {x}"),
-                bg="#3498db",
-                fg="white",
-                width=30,
-                height=2,
-                bd=3
-            ).pack(pady=8)
+    reading_index = 0
+
+    # 🟩 FRAME chia bố cục
+    progress_frame = tk.Frame(main_frame, bg="white", height=20)
+    progress_frame.pack(fill="x", padx=20, pady=(15, 10))
+
+    content_frame = tk.Frame(main_frame, bg="white")
+    content_frame.pack(fill="both", expand=True, padx=20, pady=(5, 20))
+
+    button_frame = tk.Frame(main_frame, bg="white", height=70)
+    button_frame.pack(fill="x", pady=(0, 15))
 
     # --------------------------------------
-    # 🟢 Thanh tiến độ bo tròn (Canvas)
+    # 🟩 THANH TIẾN ĐỘ
     # --------------------------------------
-    BAR_HEIGHT = 20
-    RADIUS = 10
-    progress = 0
+    BAR_HEIGHT = 10
+    RADIUS = 100
 
-    # Canvas chiếm gần hết chiều ngang main_frame
-    canvas = tk.Canvas(main_frame, height=BAR_HEIGHT, bg="white", highlightthickness=0)
-    canvas.place(relx=0.05, rely=0.1, relwidth=0.9)  # ⬅ dùng relwidth để tự co giãn
+    canvas = tk.Canvas(progress_frame, height=BAR_HEIGHT, bg="white", highlightthickness=0)
+    canvas.place(relx=0.05, rely=0.1, relwidth=0.9)
 
     def create_round_rect(canvas, x1, y1, x2, y2, r=10, **kwargs):
         r = min(r, abs(x2 - x1) / 2, abs(y2 - y1) / 2)
@@ -67,90 +63,146 @@ def show_in_main(title, contents):
             canvas.create_rectangle(x1, y1+r, x2, y2-r, **kwargs)
         ]
 
-    # 🟢 Hàm vẽ lại thanh tiến độ
     def draw_progress_bar(value):
-        """Vẽ lại thanh tiến độ bo tròn, dựa theo kích thước hiện tại"""
         canvas.delete("bar", "bg")
         BAR_WIDTH = canvas.winfo_width()
-
-        # Nền
         create_round_rect(canvas, 0, 0, BAR_WIDTH, BAR_HEIGHT, r=RADIUS, fill="#E0E0E0", outline="", tags="bg")
 
-        # Thanh tiến độ
         width = (BAR_WIDTH / 100) * value
-        r = RADIUS
-        if value <= 0:
-            return
-        elif value >= 100:
-            create_round_rect(canvas, 0, 0, BAR_WIDTH, BAR_HEIGHT, r=r, fill="#4CAF50", outline="", tags="bar")
-        else:
-            # Bo tròn đầu trái
-            canvas.create_arc(0, 0, r*2, r*2, start=90, extent=90, style=tk.PIESLICE,
-                              fill="#4CAF50", outline="", tags="bar")
-            canvas.create_arc(0, BAR_HEIGHT-r*2, r*2, BAR_HEIGHT, start=180, extent=90, style=tk.PIESLICE,
-                              fill="#4CAF50", outline="", tags="bar")
-            canvas.create_rectangle(r, 0, width, BAR_HEIGHT, fill="#4CAF50", outline="", tags="bar")
+        if value > 0:
+            create_round_rect(canvas, 0, 0, width, BAR_HEIGHT, r=RADIUS, fill="#4CAF50", outline="", tags="bar")
 
-    # Nhãn hiển thị %
-    progress_label = tk.Label(main_frame, text="Tiến độ xử lý: 0%", font=("Arial", 12), bg="white")
-    progress_label.place(relx=0.43, rely=0.05)
+    # --------------------------------------
+    # 📖 TIÊU ĐỀ + ẢNH
+    # --------------------------------------
+    title_frame = tk.Frame(content_frame, bg="white")
+    title_frame.pack(pady=(5, 10))
 
-    # 🟢 Hàm tăng tiến độ
+    try:
+        img = Image.open("./photos/Tiger.png")  # 🖼️ Ảnh của bạn (đường dẫn tùy chỉnh)
+    except:
+        img = Image.new("RGB", (40, 40), "#4CAF50")
+
+    img = img.resize((150, 100), Image.LANCZOS)
+    photo = ImageTk.PhotoImage(img)
+
+    img_label = tk.Label(title_frame, image=photo, bg="white")
+    img_label.image = photo
+    img_label.pack(side="left", padx=(0, 10))
+
+    title_label = tk.Label(
+        title_frame,
+        text="📖 Reading Practice",
+        font=("Arial", 16, "bold"),
+        bg="white"
+    )
+    title_label.pack(side="left")
+
+    # --------------------------------------
+# 🟦 VÙNG NỘI DUNG
+# --------------------------------------
+text_box = tk.Text(
+    content_frame,
+    wrap="word",
+    font=("Arial", 13),
+    bg="#F8F9FA",
+    relief="flat",
+    padx=20,
+    pady=10,
+    height=15
+)
+text_box.pack(fill="both", expand=True, padx=30, pady=(10, 20))
+
+
+# 🟢 Tạo frame chứa 2 nút trong Textbox
+button_container = tk.Frame(text_box, bg="#FFFFFF")
+
+btn_learn = tk.Button(
+    button_container,
+    text="Chế độ học",
+    font=("Arial", 10, "bold"),
+    bg="#2196F3",
+    fg="white",
+    relief="flat",
+    width=12
+)
+
+btn_exercise = tk.Button(
+    button_container,
+    text="Bài tập",
+    font=("Arial", 10, "bold"),
+    bg="#8BC34A",
+    fg="white",
+    relief="flat",
+    width=12
+)
+
+btn_learn.pack(side="left", padx=10, pady=5)
+btn_exercise.pack(side="left", padx=10, pady=5)
+
+
+def update_reading():
+    text_box.delete("1.0", "end")
+    text_box.insert("1.0", readings[reading_index] + "\n\n")
+    text_box.window_create("end", window=button_container)  # ✅ Nhúng nút vào Text
+
+
+    # --------------------------------------
+    # 🟨 NÚT Ở DƯỚI CÙNG + TIẾN ĐỘ
+    # --------------------------------------
+    def calc_progress():
+        if len(readings) == 1:
+            return 100
+        return int((reading_index / (len(readings) - 1)) * 100)
+
+    def update_reading_and_progress():
+        text_box.delete("1.0", "end")
+        text_box.insert("1.0", readings[reading_index])
+        draw_progress_bar(calc_progress())
+
     def increase_progress():
-        nonlocal progress
-        if progress < 100:
-            progress += 20
-            draw_progress_bar(progress)
-            progress_label.config(text=f"Tiến độ xử lý: {progress}%")
-            if progress == 100:
-                progress_label.config(text="Hoàn thành ✅")
-
-    # 🟢 Hàm giảm tiến độ
-    def decrease_progress():
-        nonlocal progress
-        if progress > 0:
-            progress -= 20
-            draw_progress_bar(progress)
-            progress_label.config(text=f"Tiến độ xử lý: {progress}%")
+        nonlocal reading_index
+        if reading_index < len(readings) - 1:
+            reading_index += 1
+            update_reading_and_progress()
         else:
-            progress_label.config(text="Đã về mức 0% 🔁")
+            draw_progress_bar(100)
 
-    # 🟢 Sự kiện khi resize cửa sổ
-    def on_resize(event):
-        draw_progress_bar(progress)
+    def decrease_progress():
+        nonlocal reading_index
+        if reading_index > 0:
+            reading_index -= 1
+            update_reading_and_progress()
 
-    canvas.bind("<Configure>", on_resize)
+    canvas.bind("<Configure>", lambda e: draw_progress_bar(calc_progress()))
 
-    # 🟢 Nút quay về
     tk.Button(
-        main_frame,
+        button_frame,
         text="Quay về",
         command=decrease_progress,
         bg="#f44336",
         fg="white",
         font=("Arial", 12, "bold"),
         width=10
-    ).place(relx=0.1, rely=0.9)
+    ).pack(side="left", padx=80, pady=10)
 
-    # 🟢 Nút tiếp theo
     tk.Button(
-        main_frame,
+        button_frame,
         text="Tiếp theo",
         command=increase_progress,
         bg="#4CAF50",
         fg="white",
         font=("Arial", 12, "bold"),
         width=10
-    ).place(relx=0.8, rely=0.9)
+    ).pack(side="right", padx=80, pady=10)
 
-    # Vẽ lần đầu
-    draw_progress_bar(progress)
+    draw_progress_bar(calc_progress())
 
 # --------------------------------------
 # 3) Sidebar trái & phải
 # --------------------------------------
 create_sidebar_left(root, show_in_main)
-create_sidebar_right(root)
+create_sidebar_learning(root)
 
 # --------------------------------------
 # 4) Hiển thị main_frame

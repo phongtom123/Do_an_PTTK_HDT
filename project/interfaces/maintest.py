@@ -3,6 +3,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import tkinter as tk
 
+# =================== MOCK / IMPORT ===================
 try:
     from main_content import create_main_frame, show_message
 except ImportError:
@@ -71,6 +72,7 @@ except ImportError:
         tk.Button(main_frame, text="← Quay lại",
                   command=lambda: show_in_main("__BACK__", [])).pack()
 
+# =================== MAIN APP ===================
 root = tk.Tk()
 root.title("BulaBuluuuu")
 root.geometry("1100x700")
@@ -101,6 +103,7 @@ def reset_sidebar():
         recreate_sidebar_right()
         in_reading_mode[0] = False
 
+# =================== HEADER ===================
 def create_header(root, part_text="Phần 9", title_text="Bài mới mỗi ngày",
                   color="#1da9fe", back_callback=None):
     wrapper = tk.Frame(root, bg="#f9f9f9")
@@ -121,6 +124,7 @@ def create_header(root, part_text="Phần 9", title_text="Bài mới mỗi ngày
 
     return header
 
+# =================== LESSON LIST ===================
 def show_lesson_list():
     reset_sidebar()
     for w in main_frame.winfo_children():
@@ -150,6 +154,7 @@ def show_lesson_list():
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
+    # ✅ Hiển thị Units đúng định dạng
     for unit in units:
         # Nếu là tuple: (id, name, ...)
         if isinstance(unit, (tuple, list)):
@@ -179,6 +184,7 @@ def show_lesson_list():
                   width=10, height=1,
                   command=lambda u=unit_name: open_unit_lessons(u)).pack(side="right")
 
+# =================== SHOW IN MAIN ===================
 def show_in_main(title, contents):
     reset_sidebar()
     # Nếu là trở về trang chính (avatar hoặc back)
@@ -186,9 +192,11 @@ def show_in_main(title, contents):
         show_lesson_list()
         return
 
+    # --- Xóa nội dung cũ ---
     for w in main_frame.winfo_children():
         w.destroy()
 
+    # --- Tạo header mới ---
     create_header(
         main_frame,
         part_text="Units",
@@ -201,11 +209,12 @@ def show_in_main(title, contents):
         lesson = {"title": str(item), "status": "Chưa học"}
 
         def lesson_callback(x=item):
+            # --- Tạm thời ẩn sidebar phải ---
             if sidebar_right_ref[0] is not None:
                 sidebar_right_ref[0].pack_forget()
                 sidebar_right_ref[0].destroy()
                 sidebar_right_ref[0] = None
-            # Mở Reading
+            # --- Mở Reading ---
             show_reading_practice(root, main_frame, sidebar_right_ref,
                                   recreate_sidebar_right, show_in_main, in_reading_mode)
 
@@ -230,6 +239,7 @@ def show_in_main(title, contents):
                   width=10, height=1,
                   command=lesson["button_cmd"]).pack(side="right")
 
+# =================== START ===================
 create_sidebar_left(root, show_in_main)
 main_frame.pack(side="left", fill="both", expand=True)
 show_lesson_list()

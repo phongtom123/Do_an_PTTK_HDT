@@ -26,9 +26,14 @@ def create_sidebar_learning(root):
         canvas.configure(scrollregion=canvas.bbox("all"))
     scrollable_frame.bind("<Configure>", on_frame_configure)
 
+    # Scroll wheel chỉ dành cho canvas này
     def _on_mousewheel(event):
-        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-    canvas.bind_all("<MouseWheel>", _on_mousewheel)
+     canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+# Khi chuột vào canvas, scroll wheel chỉ điều khiển canvas này
+    canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _on_mousewheel))
+    canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
+
 
     # -----------------------------
     # Custom radiobutton tròn

@@ -67,10 +67,7 @@ def create_sidebar_left(root, show_in_main):
     logo_frame.pack_propagate(False)
 
     def go_home():
-        show_in_main("Home", ["Chào mừng bạn trở lại 👋"])
-        if getattr(make_button, "active_button", None):
-            make_button.active_button.config(bg="#FFFFFF", font=("Arial", 12))
-            make_button.active_button = None
+        show_in_main("__BACK__", [])
 
     try:
         img2 = Image.open("./photos/2.png").resize((150,130))
@@ -88,24 +85,16 @@ def create_sidebar_left(root, show_in_main):
             command=go_home
         ).pack(pady=20)
 
-    # === Các nút chính ===
+    # === MỤC HỌC ===
     btn_courses = make_button(sidebar_left, "Học", icons["learn"])
     btn_courses.pack(fill="x", pady=5)
 
-    btn_reading = make_button(
-        sidebar_left, "Reading", icons["book"],
-        cmd=lambda: show_in_main("Reading", get_all_units()), padx=40
-    )
-    btn_listening = make_button(
-        sidebar_left, "Listening", icons["earphone"],
-        cmd=lambda: show_in_main("Listening", get_all_units()), padx=40
-    )
     btn_vocab = make_button(
         sidebar_left, "Từ vựng", icons["vocab"],
         cmd=lambda: show_in_main("Từ vựng", ["Từ mới hôm nay","Ôn tập tuần"]), padx=40
     )
 
-    courses_sub = [btn_reading, btn_listening, btn_vocab]
+    courses_sub = [btn_vocab]
     courses_open = False
 
     def toggle_courses():
@@ -121,13 +110,38 @@ def create_sidebar_left(root, show_in_main):
 
     btn_courses.config(command=toggle_courses)
 
-    # === Các nút khác ===
+    # === MỤC LUYỆN TẬP ===
     btn_practice = make_button(
-        sidebar_left, "Luyện tập", icons["practice"],
-        lambda: show_in_main("Luyện tập", ["Day 1"])
+        sidebar_left, "Luyện tập", icons["practice"]
     )
     btn_practice.pack(fill="x", pady=5)
 
+    btn_reading = make_button(
+        sidebar_left, "Reading", icons["book"],
+        cmd=lambda: show_in_main("Reading", get_all_units()), padx=40
+    )
+    btn_listening = make_button(
+        sidebar_left, "Listening", icons["earphone"],
+        cmd=lambda: show_in_main("Listening", get_all_units()), padx=40
+    )
+
+    practice_sub = [btn_reading, btn_listening]
+    practice_open = False
+
+    def toggle_practice():
+        nonlocal practice_open
+        if practice_open:
+            for b in practice_sub:
+                b.pack_forget()
+            practice_open = False
+        else:
+            for b in practice_sub:
+                b.pack(fill="x", pady=2, after=btn_practice)
+            practice_open = True
+
+    btn_practice.config(command=toggle_practice)
+
+    # === CÁC MỤC KHÁC ===
     btn_rank = make_button(
         sidebar_left, "Xếp hạng", icons["ranking"],
         lambda: show_in_main("Xếp hạng", ["Top 1: Nam","Top 2: Linh"])
@@ -172,14 +186,14 @@ def create_sidebar_left(root, show_in_main):
     # === Toggle Sidebar ===
     def toggle_sidebar(event=None):
         if not collapsed[0]:
-            # Đóng sidebar (ẩn toàn bộ nội dung, bỏ viền)
+            # Đóng sidebar
             for widget in sidebar_left.winfo_children():
                 widget.pack_forget()
             sidebar_left.config(width=10, highlightthickness=0)
             toggle_icon.config(text=">")
             collapsed[0] = True
         else:
-            # Mở lại sidebar và khôi phục toàn bộ giao diện
+            # Mở lại sidebar
             sidebar_left.config(width=200, highlightthickness=1, highlightbackground="#e0e0e0")
 
             logo_frame.pack(fill="x")
@@ -189,6 +203,10 @@ def create_sidebar_left(root, show_in_main):
                     b.pack(fill="x", pady=2, after=btn_courses)
 
             btn_practice.pack(fill="x", pady=5)
+            if practice_open:
+                for b in practice_sub:
+                    b.pack(fill="x", pady=2, after=btn_practice)
+
             btn_rank.pack(fill="x", pady=5)
             btn_more.pack(fill="x", pady=5)
             btn_account.pack(fill="x", pady=5)

@@ -25,11 +25,12 @@ CREATE TABLE `Roles` (
 );
 
 CREATE TABLE `Words` (
-  `word` varchar(30) PRIMARY KEY,
+  `word_id` integer PRIMARY KEY AUTO_INCREMENT,
+  `word` varchar(255),
   `word_meaning` varchar(30),
   `word_status` varchar(30),
   `word_difficulty` varchar(30),
-  `word_question_id` int
+  `word_lesson_id` int
 );
 
 CREATE TABLE `Units` (
@@ -77,14 +78,14 @@ CREATE TABLE `Learnings` (
   `learning_finished_time` timestamp,
   `learning_score` float,
   `learning_is_pass` bool,
-  `learning_user_progress` varchar(30)
+  `learning_user_progress` varchar(30),
+  `learning_date` datetime
 );
 
 CREATE TABLE `Games` (
   `game_id` integer PRIMARY KEY AUTO_INCREMENT,
-  `game_user_id1` integer,
-  `game_user_id2` integer,
-  `game_user_id_won` integer
+  `game_user_id` integer,
+  `correct_word_quantity` int
 );
 
 CREATE TABLE `Answers` (
@@ -96,7 +97,7 @@ CREATE TABLE `Answers` (
 
 ALTER TABLE `Users` ADD FOREIGN KEY (`user_role_id`) REFERENCES `Roles` (`role_id`);
 
-ALTER TABLE `Words` ADD FOREIGN KEY (`word_question_id`) REFERENCES `Questions` (`question_id`);
+ALTER TABLE `Words` ADD FOREIGN KEY (`word_lesson_id`) REFERENCES `Lessons` (`lesson_id`);
 
 ALTER TABLE `Lessons` ADD FOREIGN KEY (`lesson_unit_id`) REFERENCES `Units` (`unit_id`);
 
@@ -114,13 +115,14 @@ ALTER TABLE `Learnings` ADD FOREIGN KEY (`learning_user_id`) REFERENCES `Users` 
 
 ALTER TABLE `Learnings` ADD FOREIGN KEY (`learning_unit_id`) REFERENCES `Units` (`unit_id`);
 
-ALTER TABLE `Users` ADD FOREIGN KEY (`user_id`) REFERENCES `Games` (`game_user_id1`);
-
-ALTER TABLE `Users` ADD FOREIGN KEY (`user_id`) REFERENCES `Games` (`game_user_id2`);
+ALTER TABLE `Users` ADD FOREIGN KEY (`user_id`) REFERENCES `Games` (`game_user_id`);
 
 ALTER TABLE `Answers` ADD FOREIGN KEY (`answer_question_id`) REFERENCES `Questions` (`question_id`);
 
 ALTER TABLE `Answers` ADD FOREIGN KEY (`answer_user_id`) REFERENCES `Users` (`user_id`);
+
+ALTER TABLE `Learnings` ADD FOREIGN KEY (`learning_unit_id`) REFERENCES `Learnings` (`learning_score`);
+
 '''
 )
 print("Tạo bảng thành công.")

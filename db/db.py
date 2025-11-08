@@ -41,7 +41,7 @@ class db:
     def dml_ddl_operator(self, query: str, params: tuple = None):
          '''Dùng để thao tác thêm, sửa, xóa với db'''
          cursor = self.connect.cursor()
-         cursor.execute(cursor.execute(query, params))
+         cursor.execute(query, params)
     
     def close(self):
          self.connect.close()

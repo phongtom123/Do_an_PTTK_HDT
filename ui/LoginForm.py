@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
+from ui.SignupForm import SignupForm
 from logic.auth import LoginManager
 import os
 
@@ -13,8 +14,8 @@ class LoginForm:
         self.window.resizable(0,0) # Tat resize
         self.window.update()
 
-        self.username_var = tk.StringVar(value="default value")
-        self.password_var = tk.StringVar(value="default value")
+        self.username_var = tk.StringVar(value="")
+        self.password_var = tk.StringVar(value="")
         self.base_dir = os.path.dirname(__file__)
 
         height = self.window.winfo_height()
@@ -64,7 +65,7 @@ class LoginForm:
             fg="white",
             font=("yu gothic ui", 17, "bold")
         )
-        self.sign_in_label.place(x=650, y=240)
+        self.sign_in_label.place(x=660, y=240)
         # =================End sign in image,label======================
 
         # =================Start username===============================
@@ -126,7 +127,7 @@ class LoginForm:
             show="*",
             textvariable= self.password_var
         )
-        self.password_entry.place(x=580, y=416, width=270)
+        self.password_entry.place(x=580, y=412, width=270)
 
         self.password_line = tk.Canvas(
             self.lgn_frame,
@@ -208,21 +209,35 @@ class LoginForm:
 
         self.sign_up_label.image = photo  # ?
         self.sign_up_label.place(x=670, y=550, width=111, height=35)
-
+        # event
+        self.sign_up_label.bind('<Button-1>', self.go_to_signup)
 
         # ================Show/hide password============
-        self.show_image = Image.open(self.base_dir + "/../assets/icons/show.png")
-        photo = ImageTk.PhotoImage(self.show_image)
-        self.show_button = tk.Label(
-            self.lgn_frame,
-            image=photo,
-            bg="#040405",
-            activebackground="#040405",
-            cursor="hand2",
-            bd=0
-        )
-        self.show_button_image = photo
+        self.show_image = ImageTk.PhotoImage \
+            (file=self.base_dir + '/../assets/icons/show.png')
+
+        self.hide_image = ImageTk.PhotoImage \
+            (file=self.base_dir + '/../assets/icons/show.png')
+
+        self.show_button = tk.Button(self.lgn_frame, image=self.show_image, command=self.show, relief=tk.FLAT,
+                                  activebackground="white"
+                                  , borderwidth=0, background="white", cursor="hand2")
         self.show_button.place(x=860, y=420)
+
+    def show(self):
+        self.hide_button = tk.Button(self.lgn_frame, image=self.hide_image, command=self.hide, relief=tk.FLAT,
+                                  activebackground="white"
+                                  , borderwidth=0, background="white", cursor="hand2")
+        self.hide_button.place(x=860, y=420)
+        self.password_entry.config(show='')
+
+    def hide(self):
+        self.show_button = tk.Button(self.lgn_frame, image=self.show_image, command=self.show, relief=tk.FLAT,
+                                  activebackground="white"
+                                  , borderwidth=0, background="white", cursor="hand2")
+        self.show_button.place(x=860, y=420)
+        self.password_entry.config(show='*')
+
 
         
     def authentic(self):
@@ -236,6 +251,13 @@ class LoginForm:
             else:
                 print("Đăng nhập không thành công.")
             
+    def go_to_signup(self, event=None):
+        '''Hàm redirect qua form Signup'''
+        self.window.destroy()
+        new_window = tk.Tk()
+        SignupForm(new_window)
+        new_window.mainloop()
+
 def page():
     window = tk.Tk()
     LoginForm(window)

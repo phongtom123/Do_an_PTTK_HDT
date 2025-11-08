@@ -3,7 +3,7 @@ from db import db
 class LoginManager():
     def __init__(self):
         self.my_db = db.db()
-        self.df = my_db.query("SELECT user_name, user_password FROM `Users`")
+        self.df = self.my_db.query("SELECT user_name, user_password FROM `Users`")
 
     def auth(self, username: str, password:str) -> bool:
         '''Trả về true nếu username và password ở trong db và ngược lại'''
@@ -31,4 +31,4 @@ class SigninManager():
         return 0
     
     def update_db(self):
-        
+        pass

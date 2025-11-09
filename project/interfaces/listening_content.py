@@ -25,7 +25,7 @@ def show_listening_practice(root, main_frame, sidebar_right_ref,
         sidebar_right_ref[0] = None
     root.update_idletasks()
 
-    sidebar_learning = create_sidebar_learning(root)
+    sidebar_learning = create_sidebar_learning(root, mode="Listening")
     sidebar_right_ref[0] = sidebar_learning
 
     # --- Giao diện chính ---

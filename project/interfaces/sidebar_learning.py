@@ -1,6 +1,6 @@
 ﻿import tkinter as tk
 
-def create_sidebar_learning(root):
+def create_sidebar_learning(root, mode="Reading"):
     sidebar = tk.Frame(
         root,
         bg="#FFFFFF",
@@ -107,14 +107,21 @@ def create_sidebar_learning(root):
     # -----------------------------
     # Danh sách câu hỏi
     # -----------------------------
-    questions = [
+    if mode == "Reading":
+        questions = [
+        {"q": "What is the main idea of the passage?", "opts": ["A. Travel", "B. Food", "C. Sports", "D. Technology"]},
         {"q": "How many animals were mentioned in this paragraph?", "opts": ["A. 1", "B. 2", "C. 3", "D. None"]},
         {"q": "Which color symbolizes peace and is often used in flags?", "opts": ["A. Red", "B. Green", "C. White", "D. Black"]},
-        {"q": "What is the capital of France?", "opts": ["A. Rome", "B. Madrid", "C. Paris", "D. Berlin"]},
-        {"q": "Which planet is known as the Red Planet?", "opts": ["A. Venus", "B. Mars", "C. Jupiter", "D. Saturn"]},
-        {"q": "What gas do plants absorb during photosynthesis?", "opts": ["A. Oxygen", "B. Nitrogen", "C. Carbon Dioxide", "D. Helium"]},
-        {"q": "Which animal is known as the King of the Jungle?", "opts": ["A. Elephant", "B. Tiger", "C. Lion", "D. Bear"]},
     ]
+    elif mode == "Listening":
+            questions = [
+        {"q": "What did the speaker mention first?", "opts": ["A. The weather", "B. His work", "C. A trip", "D. A song"]},
+        {"q": "Where does the conversation take place?", "opts": ["A. At school", "B. At a cafe", "C. On a bus", "D. At home"]},
+        {"q": "What is the tone of the speaker?", "opts": ["A. Angry", "B. Happy", "C. Sad", "D. Surprised"]},
+    ]
+    else:
+        questions = []
+
 
     for i, q in enumerate(questions, start=1):
         create_question_card(scrollable_frame, i, q["q"], q["opts"])

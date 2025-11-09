@@ -1,74 +1,130 @@
 ﻿import tkinter as tk
+from tkinter import ttk
 
-def create_header(root, part_text="Phần 9", title_text="Bài mới mỗi ngày", color="#1da9fe"):
-    """Tạo thanh tiêu đề tự mở rộng ngang (giống lesson_cards)."""
-    wrapper = tk.Frame(root, bg="#f9f9f9")
-    wrapper.pack(fill="x", padx=20, pady=15)  
+def show_reading_practice(root, main_frame, sidebar_right_ref,
+                          recreate_sidebar_right, show_in_main, in_reading_mode):
 
-    header = tk.Frame(wrapper, bg=color, height=80)
-    header.pack(fill="x")                     
-    header.pack_propagate(False)              
+    in_reading_mode[0] = True
 
-    tk.Label(
-        header, text=f"← {part_text}", bg=color,
-        fg="white", font=("Arial", 10, "bold"), anchor="w"
-    ).pack(anchor="w", padx=20, pady=(10, 0))
+    # Xóa nội dung cũ
+    for w in main_frame.winfo_children():
+        w.destroy()
 
-    tk.Label(
-        header, text=title_text, bg=color,
-        fg="white", font=("Arial", 14, "bold"), anchor="w"
-    ).pack(anchor="w", padx=20, pady=(2, 10))
+    # ------------------ Dữ liệu từ vựng ------------------
+    vocab = {
+        "elephant": ("noun", "con voi"),
+        "largest": ("adj", "lớn nhất"),
+        "animal": ("noun", "động vật"),
+        "land": ("noun", "đất liền"),
+        "cheetah": ("noun", "báo săn"),
+        "fastest": ("adj", "nhanh nhất"),
+    }
 
-    return header
-
-
-def create_lesson_cards(root, lessons):
-    """Danh sách thẻ học phần (không bo tròn)."""
-    container = tk.Frame(root, bg="#f9f9f9")
-    container.pack(fill="both", expand=True, padx=20, pady=10)
-
-    def create_card(parent, title, status_text, button_text="ÔN TẬP"):
-        outer = tk.Frame(parent, bg="white", highlightbackground="#e0e0e0", highlightthickness=1)
-        outer.pack(pady=10, fill="x")
-
-        inner = tk.Frame(outer, bg="white")
-        inner.pack(fill="x", padx=20, pady=15)
-
-        left = tk.Frame(inner, bg="white")
-        left.pack(side="left", fill="x", expand=True)
-
-        tk.Label(left, text=title, font=("Arial", 13, "bold"), bg="white", fg="#333").pack(anchor="w")
-        tk.Label(left, text=f"✅ {status_text}", font=("Arial", 11, "bold"), bg="white", fg="#00AA00").pack(anchor="w", pady=(5,0))
-
-        tk.Button(inner, text=button_text,
-                  font=("Arial", 11, "bold"),
-                  fg="#1da9fe", bg="white",
-                  bd=1, relief="solid",
-                  activebackground="#ecf5ff",
-                  cursor="hand2",
-                  width=10, height=1).pack(side="right")
-
-        return outer
-
-    for lesson in lessons:
-        create_card(container, lesson["title"], lesson["status"])
-
-    return container
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    root.geometry("600x550")
-    root.title("Danh sách học phần")
-
-    create_header(root, part_text="Phần 9", title_text="Bài mới mỗi ngày", color="#1da9fe")
-
-    sample_lessons = [
-        {"title": "Unit 1", "status": "HOÀN THÀNH!"},
-        {"title": "Unit 2", "status": "HOÀN THÀNH!"},
-        {"title": "Unit 3", "status": "HOÀN THÀNH!"},
-        {"title": "Unit 4", "status": "HOÀN THÀNH"},
+    readings = [
+        "Reading 1:\n\nThe elephant is the largest land animal.",
+        "Reading 2:\n\nThe cheetah is the fastest land animal.",
     ]
+    reading_index = 0
 
-    create_lesson_cards(root, sample_lessons)
+    # Layout chính
+    content_frame = tk.Frame(main_frame, bg="white")
+    content_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-    root.mainloop()
+    notebook = ttk.Notebook(content_frame)
+    notebook.pack(fill="both", expand=True)
+
+    tab_learn = tk.Frame(notebook, bg="white")
+    tab_exercise = tk.Frame(notebook, bg="white")
+    notebook.add(tab_learn, text="Tra từ vựng")
+    notebook.add(tab_exercise, text="Chế độ Highlight")
+
+    text_box = tk.Text(tab_learn, wrap="word", font=("Arial", 13),
+                       bg="#F8F9FA", relief="flat", padx=10, pady=5)
+    text_box.pack(fill="both", expand=True)
+    text_box.configure(state="disabled")
+
+    # --------- Popup tra từ vựng ---------
+    current_popup = None
+
+    def close_popup(event=None):
+        nonlocal current_popup
+        if current_popup:
+            current_popup.destroy()
+            current_popup = None
+
+    def show_popup(x, y, word):
+        nonlocal current_popup
+        close_popup()
+
+        word_lower = word.lower()
+        if word_lower not in vocab:
+            return
+
+        pos, meaning = vocab[word_lower]
+
+        popup = tk.Toplevel(root)
+        popup.wm_overrideredirect(True)
+        popup.wm_geometry(f"+{x + 10}+{y + 10}")
+        popup.configure(bg="#ffffe0", padx=8, pady=5)
+
+        tk.Label(popup, text=word, font=("Arial", 12, "bold"), bg="#ffffe0").pack(anchor="w")
+        tk.Label(popup, text=f"Loại từ: {pos}", font=("Arial", 10), bg="#ffffe0").pack(anchor="w")
+        tk.Label(popup, text=f"Nghĩa: {meaning}", font=("Arial", 10), bg="#ffffe0").pack(anchor="w")
+
+        current_popup = popup
+
+        root.bind("<Button-1>", close_popup, add="+")
+
+    def on_click_word(event):
+        index = text_box.index(f"@{event.x},{event.y}")
+        tags = text_box.tag_names(index)
+        for t in tags:
+            if t.startswith("word_"):
+                word = t.replace("word_", "")
+                x = root.winfo_pointerx()
+                y = root.winfo_pointery()
+                show_popup(x, y, word)
+                break
+
+    def update_text():
+        text_box.configure(state="normal")
+        text_box.delete("1.0", "end")
+        text_box.insert("1.0", readings[reading_index])
+
+        for word in vocab:
+            start = "1.0"
+            while True:
+                idx = text_box.search(word, start, "end", nocase=1)
+                if not idx:
+                    break
+                end = f"{idx}+{len(word)}c"
+                tag = f"word_{word}"
+                text_box.tag_add(tag, idx, end)
+                text_box.tag_config(tag, foreground="blue", underline=True)
+                start = end
+
+        text_box.configure(state="disabled")
+
+    text_box.bind("<Button-1>", on_click_word)
+
+    nav = tk.Frame(main_frame, bg="white")
+    nav.pack(fill="x")
+
+    def prev():
+        nonlocal reading_index
+        if reading_index > 0:
+            reading_index -= 1
+            close_popup()
+            update_text()
+
+    def next():
+        nonlocal reading_index
+        if reading_index < len(readings) - 1:
+            reading_index += 1
+            close_popup()
+            update_text()
+
+    tk.Button(nav, text="← Trước", command=prev, width=10).pack(side="left", padx=20, pady=10)
+    tk.Button(nav, text="Sau →", command=next, width=10).pack(side="right", padx=20, pady=10)
+
+    update_text()

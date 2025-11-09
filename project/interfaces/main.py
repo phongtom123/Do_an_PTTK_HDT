@@ -3,74 +3,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import tkinter as tk
 
-try:
-    from main_content import create_main_frame, show_message
-except ImportError:
-    def create_main_frame(root):
-        frame = tk.Frame(root, bg="#FFFFFF")
-        return frame
+# --- import các module chính ---
+from main_content import create_main_frame, show_message
+from sidebar_left import create_sidebar_left
+from sidebar_right import create_sidebar_right
+from controller.unit_controller import get_all_units
+from reading_content import show_reading_practice
+from listening_content import show_listening_practice
 
-    def show_message(msg):
-        popup = tk.Toplevel()
-        popup.title("Thông báo")
-        tk.Label(popup, text=msg, font=("Arial", 12)).pack(padx=20, pady=20)
-        tk.Button(popup, text="OK", command=popup.destroy).pack(pady=(0, 15))
-
-try:
-    from sidebar_left import create_sidebar_left
-except ImportError:
-    def create_sidebar_left(root, show_in_main):
-        sidebar = tk.Frame(root, bg="#f5f5f5", width=200)
-        sidebar.pack(side="left", fill="y")
-        sidebar.pack_propagate(False)
-        tk.Label(sidebar, text="📚 DANH MỤC", bg="#f5f5f5",
-                 font=("Arial", 12, "bold"), pady=10).pack()
-
-        tk.Button(sidebar, text="🏠 Trang chính", font=("Arial", 11, "bold"),
-                  fg="#1da9fe", bg="white", relief="flat", cursor="hand2",
-                  command=lambda: show_in_main("__BACK__", [])
-                  ).pack(fill="x", padx=15, pady=(5, 15))
-
-        for name in ["Reading", "Listening", "Writing"]:
-            tk.Button(sidebar, text=name, font=("Arial", 11, "bold"),
-                      fg="#1da9fe", bg="white", relief="flat", cursor="hand2",
-                      command=lambda n=name: show_in_main(n, [f"{n} 1", f"{n} 2"])
-                      ).pack(fill="x", padx=15, pady=5)
-        return sidebar
-
-try:
-    from sidebar_right import create_sidebar_right
-except ImportError:
-    def create_sidebar_right(root):
-        sidebar = tk.Frame(root, bg="#fafafa", width=220)
-        sidebar.pack(side="right", fill="y")
-        sidebar.pack_propagate(False)
-        tk.Label(sidebar, text="📖 THÔNG TIN", bg="#fafafa",
-                 font=("Arial", 12, "bold"), pady=10).pack()
-        tk.Label(sidebar, text="Chọn một bài học để bắt đầu.",
-                 bg="#fafafa", wraplength=180).pack(padx=10, pady=10)
-        return sidebar
-
-try:
-    from controller.unit_controller import get_all_units
-except ImportError:
-    def get_all_units():
-        # fallback giả lập dữ liệu
-        return [(1, "Unit 1"), (2, "Unit 2"), (3, "Unit 3")]
-
-try:
-    from reading_content import show_reading_practice
-except ImportError:
-    def show_reading_practice(root, main_frame, sidebar_right_ref,
-                              recreate_sidebar_right, show_in_main, in_reading_mode):
-        in_reading_mode[0] = True
-        for w in main_frame.winfo_children():
-            w.destroy()
-        tk.Label(main_frame, text="📘 Reading Practice",
-                 font=("Arial", 16, "bold"), bg="white").pack(pady=30)
-        tk.Button(main_frame, text="← Quay lại",
-                  command=lambda: show_in_main("__BACK__", [])).pack()
-
+# --- Khởi tạo ---
 root = tk.Tk()
 root.title("BulaBuluuuu")
 root.geometry("1100x700")
@@ -85,11 +26,14 @@ def recreate_sidebar_right():
     return sidebar
 
 recreate_sidebar_right()
-in_reading_mode = [False]
+in_learning_mode = [False]
 
+# --- Biến nhớ chế độ hiện tại ---
+current_mode = [None]   # sẽ là "Reading" hoặc "Listening"
+
+# --- Reset sidebar phải ---
 def reset_sidebar():
-    """Khôi phục sidebar phải khi quay lại"""
-    if in_reading_mode[0]:
+    if in_learning_mode[0]:
         if sidebar_right_ref[0] is not None:
             try:
                 sidebar_right_ref[0].pack_forget()
@@ -99,8 +43,9 @@ def reset_sidebar():
             sidebar_right_ref[0] = None
         root.update_idletasks()
         recreate_sidebar_right()
-        in_reading_mode[0] = False
+        in_learning_mode[0] = False
 
+# --- Header ---
 def create_header(root, part_text="Phần 9", title_text="Bài mới mỗi ngày",
                   color="#1da9fe", back_callback=None):
     wrapper = tk.Frame(root, bg="#f9f9f9")
@@ -121,6 +66,7 @@ def create_header(root, part_text="Phần 9", title_text="Bài mới mỗi ngày
 
     return header
 
+# --- Danh sách unit ---
 def show_lesson_list():
     reset_sidebar()
     for w in main_frame.winfo_children():
@@ -151,11 +97,7 @@ def show_lesson_list():
     scrollbar.pack(side="right", fill="y")
 
     for unit in units:
-        # Nếu là tuple: (id, name, ...)
-        if isinstance(unit, (tuple, list)):
-            unit_name = unit[1]
-        else:
-            unit_name = getattr(unit, "unit_name", str(unit))
+        unit_name = unit[1] if isinstance(unit, (tuple, list)) else str(unit)
 
         outer = tk.Frame(scrollable_frame, bg="white", highlightbackground="#e0e0e0", highlightthickness=1)
         outer.pack(pady=10, fill="x")
@@ -167,11 +109,13 @@ def show_lesson_list():
         left.pack(side="left", fill="x", expand=True)
 
         tk.Label(left, text=unit_name, font=("Arial", 13, "bold"), bg="white", fg="#333").pack(anchor="w")
-        tk.Label(left, text="✅ HOÀN THÀNH", font=("Arial", 11, "bold"), bg="white", fg="#00AA00").pack(anchor="w", pady=(5, 0))
+        tk.Label(left, text="✅ HOÀN THÀNH", font=("Arial", 11, "bold"),
+                 bg="white", fg="#00AA00").pack(anchor="w", pady=(5, 0))
 
         def open_unit_lessons(u):
             lessons = [f"Lesson {i}" for i in range(1, 6)]
-            show_in_main(u, lessons)
+            # truyền luôn chế độ hiện tại
+            show_in_main(u, lessons, current_mode[0])
 
         tk.Button(inner, text="ÔN TẬP", font=("Arial", 11, "bold"),
                   fg="#1da9fe", bg="white", bd=1, relief="solid",
@@ -179,9 +123,15 @@ def show_lesson_list():
                   width=10, height=1,
                   command=lambda u=unit_name: open_unit_lessons(u)).pack(side="right")
 
-def show_in_main(title, contents):
+# --- Hiển thị danh sách lesson ---
+def show_in_main(title, contents, mode=None):
     reset_sidebar()
-    # Nếu là trở về trang chính (avatar hoặc back)
+
+    # Nếu là nhấn từ sidebar thì ghi lại chế độ
+    if title in ("Reading", "Listening"):
+        current_mode[0] = title
+
+    # Nếu là quay lại
     if title == "__BACK__":
         show_lesson_list()
         return
@@ -189,25 +139,29 @@ def show_in_main(title, contents):
     for w in main_frame.winfo_children():
         w.destroy()
 
-    create_header(
-        main_frame,
-        part_text="Units",
-        title_text=f"Nội dung {title}",
-        back_callback=show_lesson_list
-    )
+    create_header(main_frame, part_text="Units",
+                  title_text=f"Nội dung {title}", back_callback=show_lesson_list)
 
     lessons = []
     for item in contents:
         lesson = {"title": str(item), "status": "Chưa học"}
 
         def lesson_callback(x=item):
+            # đóng sidebar_right
             if sidebar_right_ref[0] is not None:
                 sidebar_right_ref[0].pack_forget()
                 sidebar_right_ref[0].destroy()
                 sidebar_right_ref[0] = None
-            # Mở Reading
-            show_reading_practice(root, main_frame, sidebar_right_ref,
-                                  recreate_sidebar_right, show_in_main, in_reading_mode)
+
+                        # Nếu trước đó chọn Listening → mở listening_content
+            if current_mode[0] == "Listening":
+                show_listening_practice(root, main_frame, sidebar_right_ref,
+                                        recreate_sidebar_right, show_in_main, in_learning_mode)
+            else:
+                # Mặc định luôn mở Reading
+                show_reading_practice(root, main_frame, sidebar_right_ref,
+                                      recreate_sidebar_right, show_in_main, in_learning_mode)
+
 
         lesson["button_cmd"] = lesson_callback
         lessons.append(lesson)
@@ -222,14 +176,17 @@ def show_in_main(title, contents):
         inner.pack(fill="x", padx=20, pady=15)
         left = tk.Frame(inner, bg="white")
         left.pack(side="left", fill="x", expand=True)
-        tk.Label(left, text=lesson["title"], font=("Arial", 13, "bold"), bg="white", fg="#333").pack(anchor="w")
-        tk.Label(left, text=f"✅ {lesson['status']}", font=("Arial", 11, "bold"), bg="white", fg="#00AA00").pack(anchor="w", pady=(5, 0))
+        tk.Label(left, text=lesson["title"], font=("Arial", 13, "bold"),
+                 bg="white", fg="#333").pack(anchor="w")
+        tk.Label(left, text=f"✅ {lesson['status']}",
+                 font=("Arial", 11, "bold"), bg="white", fg="#00AA00").pack(anchor="w", pady=(5, 0))
         tk.Button(inner, text="HỌC", font=("Arial", 11, "bold"),
                   fg="#1da9fe", bg="white", bd=1, relief="solid",
                   activebackground="#ecf5ff", cursor="hand2",
                   width=10, height=1,
                   command=lesson["button_cmd"]).pack(side="right")
 
+# --- Giao diện chính ---
 create_sidebar_left(root, show_in_main)
 main_frame.pack(side="left", fill="both", expand=True)
 show_lesson_list()

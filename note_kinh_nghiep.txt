@@ -1,2 +1,13 @@
 - Khi tạo 1 đường dẫn tương đối cần chú ý vị trí khởi chạy sẽ ảnh hưởng đến đường dẫn.
 => Giải pháp là dùng 1 ua hằng luôn trỏ đến file của script đó (a.k.a __file__)
+
+- Mysql chỉ dùng duy nhất 1 placeholder %s (tự nó xử lý kdl)
+
+- Có nhất thiết dùng self.conn.commit() và self.conn.rollback() không ?
+
+Chức năng:
+- Signup:
+    + Kiểm tra username, email đã tồn tại chưa
+    + Kiểm tra email đúng cú pháp ko
+    + Kiểm tra pwd nhập lại có trùng không
+    + Báo và redirect sang đăng nhập nếu thành công

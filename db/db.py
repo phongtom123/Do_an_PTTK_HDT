@@ -38,11 +38,17 @@ class db:
          df = pd.read_sql(query, self.connect, params=params)
          return pd.DataFrame(df)
     
-    def dml_ddl_operator(self, query: str, params: tuple = None):
-         '''Dùng để thao tác thêm, sửa, xóa với db'''
-         cursor = self.connect.cursor()
-         cursor.execute(query, params)
-    
+    def dml_ddl_operator(self, query: str, params: tuple = None) -> None:
+        '''Dùng để thao tác thêm, sửa, xóa với db, Trả về 1 nếu query thành công và 0 nếu query không thành công'''
+        cursor = self.connect.cursor()
+        try:
+            cursor.execute(query, params)
+            self.connect.commit()   
+            return True
+        except Exception as e:
+            print(f"Lỗi: {e}")
+            return False
+        
     def close(self):
          self.connect.close()
         

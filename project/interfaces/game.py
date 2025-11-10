@@ -32,9 +32,8 @@ def create_game_screen(parent):
                                      mode="determinate", 
                                      style="timer.Horizontal.TProgressbar")
     timer_progress.grid(row=0, column=0)
-    timer_progress['value'] = 95  # 95% (tương đương 58 giây)
 
-    timer_label = tk.Label(timer_frame, text="00:58", 
+    timer_label = tk.Label(timer_frame, text="01:00", # Bắt đầu ở 01:00
                            font=("Arial", 36, "bold"), 
                            bg="white", fg="#333333")
     timer_label.grid(row=0, column=0)
@@ -97,3 +96,50 @@ def create_game_screen(parent):
                             fg="#777777", bg="white", bd=0,
                             activebackground="#f0f0f0")
     stop_button.pack(pady=20)
+
+    # ==========================================================
+    # ===            LOGIC ĐẾM NGƯỢC (ĐÃ THÊM)              ===
+    # ==========================================================
+
+    # Dùng list để có thể thay đổi giá trị trong hàm con
+    remaining_time = [60] 
+
+    def update_timer():
+        # Lấy giá trị thời gian còn lại
+        current_time = remaining_time[0]
+
+        if current_time > 0:
+            # Giảm thời gian đi 1 giây
+            current_time -= 1
+            remaining_time[0] = current_time
+
+            # Cập nhật Giao diện
+            mins, secs = divmod(current_time, 60)
+            timer_label.config(text=f"{mins:02d}:{secs:02d}")
+            
+            # Cập nhật vòng tròn tiến trình
+            progress_value = (current_time / 60) * 100
+            timer_progress.config(value=progress_value)
+
+            # Lên lịch để hàm này tự gọi lại sau 1000ms (1 giây)
+            # Dùng `parent.after` để đảm bảo nó chạy an toàn với Tkinter
+            parent.after(1000, update_timer)
+            
+        else:
+            # HẾT GIỜ
+            timer_label.config(text="00:00")
+            timer_progress.config(value=0)
+            
+            # Thông báo hết giờ và vô hiệu hóa các nút
+            word_label.config(text="Hết giờ!")
+            entry_answer.config(state="disabled")
+            check_button.config(state="disabled")
+            hint_button.config(state="disabled")
+
+    # --- KÍCH HOẠT ĐẾM NGƯỢC ---
+    # Cập nhật giao diện lần đầu (để hiển thị 01:00 và vòng tròn đầy)
+    timer_label.config(text="01:00")
+    timer_progress.config(value=100)
+    
+    # Bắt đầu vòng lặp đếm ngược sau 1 giây
+    parent.after(1000, update_timer)

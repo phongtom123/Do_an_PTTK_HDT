@@ -5,6 +5,20 @@
 
 - Có nhất thiết dùng self.conn.commit() và self.conn.rollback() không ?
 
+- loop import: trong a import b, rồi b lại import a, trong khi a chưa tạo xong -> import local
+
+- Lấy width, height khi window chưa khởi tạo xong sẽ dẫn đến 0x0
+
+- Canvas một vùng vẽ 2D — bạn có thể “vẽ” hình ảnh, văn bản, đường, hình chữ nhật, oval, v.v.
+
+- Python ko có thuộc tính truy suất, tự quy ước:
+    __var: private
+    _var: protected
+- Kinh nghiệm load 1 load ảnh: tạo 1 func trong func lưu vào 1 dict
+
+- Trong 1 package con, bắt buộc phải import module tương đối hoặc tuyệt đối.
+
+- Trong Treeview width 1 truong > minwidth (mac dinh la 20). Neu set nho hon thi phai set ca minwidth, stretch = False
 Chức năng:
 - Signup:
     + Kiểm tra username, email đã tồn tại chưa

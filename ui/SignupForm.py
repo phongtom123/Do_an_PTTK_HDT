@@ -245,43 +245,34 @@ class SignupForm:
     # ======================Start forgot password==============
         self.forgot_button = tk.Button(
             self.lgn_frame,
-            text="Forgot Password ?",
+            text="Quên mật khẩu?",
             font=("yu gothic ui", 13, "bold underline"),
             fg = "white",
             width=25,
             bd=0,
             bg = "#040405",
             activebackground= "#040405",
-            cursor="hand2"
+            cursor="hand2",
         )
         self.forgot_button.place(x=575, y=510)
     # ======================End forgot password================
 
 
-    # ======================Start sign up============================
-        self.sign_label = tk.Label(
+    # ======================Start back btn============================
+        self.back_button = tk.Button(
             self.lgn_frame,
-            text="Let learn English!",
-            font=("yu gothic ui", 11, "italic"),
-            background="#040405",
-            fg="white",
-        )
-        self.sign_label.place(x=550, y=553)
-
-        self.sign_up_label = Image.open(os.path.dirname(__file__) + "/../assets/register.png")
-        photo = ImageTk.PhotoImage(self.sign_up_label)
-        self.sign_up_label = tk.Label(
-            self.lgn_frame,
-            image=photo,
-            bg="#040405",
-            activebackground="#040405",
+            text="Đăng nhập?",
+            font=("yu gothic ui", 13, "bold underline"),
+            fg = "white",
+            width=25,
+            bd=0,
+            bg = "#040405",
+            activebackground= "#040405",
             cursor="hand2",
-            bd=0
+            command= self.get_back_login
         )
-
-        self.sign_up_label.image = photo  # ?
-        self.sign_up_label.place(x=670, y=550, width=111, height=35)
-
+        self.back_button.place(x=578, y=540)
+        # =================End back btn==========================
 
         # ================Show/hide password============
         self.show_image = Image.open(os.path.dirname(__file__) + "/../assets/icons/show.png")
@@ -346,6 +337,13 @@ class SignupForm:
                     messagebox.showinfo("Chào mừng", "Bạn đã tạo tài khoản thành công, vui lòng đăng nhập.")
                 else:
                     messagebox.showinfo("Hỏng", "Chương trình đang có quá nhiều người dùng, vui lòng thử lại sau.")
+        
+    def get_back_login(self):
+        self.window.destroy()
+        from ui.LoginForm import LoginForm
+        new_window = tk.Tk()
+        LoginForm(new_window)
+        new_window.mainloop()
 
 def page():
     window = tk.Tk()

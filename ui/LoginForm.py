@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
-from ui.SignupForm import SignupForm
+
 from logic.auth import LoginManager
 import os
 
@@ -33,7 +33,7 @@ class LoginForm:
         self.lgn_frame = tk.Frame(self.window, bg="#040405", width=950, height=600)
         self.lgn_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        self.txt = 'WELCOME TO BLUR'
+        self.txt = 'BLER XIN CHÀO'
         self.heading = tk.Label(
             self.lgn_frame,
             text=self.txt,
@@ -60,12 +60,12 @@ class LoginForm:
 
         self.sign_in_label = tk.Label(
             self.lgn_frame,
-            text="Login",
+            text="Đăng nhập",
             bg="#040405",
             fg="white",
             font=("yu gothic ui", 17, "bold")
         )
-        self.sign_in_label.place(x=660, y=240)
+        self.sign_in_label.place(x=637, y=240)
         # =================End sign in image,label======================
 
         # =================Start username===============================
@@ -157,7 +157,7 @@ class LoginForm:
 
         self.login = tk.Button(
             self.lgn_button_label,
-            text="LOGIN",
+            text="Đăng nhập",
             font=("yu gothic ui", 13, "bold"),
             width=25,
             bd=0,
@@ -173,7 +173,7 @@ class LoginForm:
     # ======================Start forgot password==============
         self.forgot_button = tk.Button(
             self.lgn_frame,
-            text="Forgot Password ?",
+            text="Quên mật khẩu?",
             font=("yu gothic ui", 13, "bold underline"),
             fg = "white",
             width=25,
@@ -254,6 +254,7 @@ class LoginForm:
     def go_to_signup(self, event=None):
         '''Hàm redirect qua form Signup'''
         self.window.destroy()
+        from ui.SignupForm import SignupForm
         new_window = tk.Tk()
         SignupForm(new_window)
         new_window.mainloop()

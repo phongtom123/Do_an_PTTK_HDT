@@ -50,13 +50,3 @@ def create_history_screen(parent):
         tree.insert("", "end", values=item)
 
     tree.pack(expand=True, fill="both")
-
-    # --- Nút Chơi Lại ---
-    play_again_button = tk.Button(history_frame, text="🎮 CHƠI LẠI!", 
-                                  font=("Arial", 14, "bold"), 
-                                  bg="#0078d4", fg="white", 
-                                  bd=0, padx=30, pady=10, 
-                                  activebackground="#005a9e", 
-                                  activeforeground="white")
-                                  # command=... (bạn có thể trỏ đến hàm chơi game)
-    play_again_button.pack(pady=30)

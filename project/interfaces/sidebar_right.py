@@ -1,7 +1,7 @@
 ﻿import tkinter as tk
 from PIL import Image, ImageTk   # Cần Pillow: pip install pillow
 
-def create_sidebar_right(root, user_name="Bạn", streak_days=0, rank=0, total_users=0, sidebar_width=280):
+def create_sidebar_right(root, user_name="Bạn", streak_days=0, rank=0, total_users=0, sidebar_width=250):
     sidebar = tk.Frame(root, bg="#FFFFFF", width=sidebar_width)
     sidebar.pack(side="right", fill="y", padx=(10,20), pady=10)
     sidebar.pack_propagate(False)

@@ -9,7 +9,6 @@ from controller.unit_controller import get_all_units
 from utils.make_button import make_button
 
 
-# === HÀM PHỤ CẦN CÓ TRƯỚC ===
 def highlight_and_open(root, button, show_in_main, title, contents):
     """Làm nổi bật nút được chọn, cập nhật trạng thái và mở nội dung"""
     # Bỏ highlight cũ
@@ -31,7 +30,6 @@ def highlight_and_open(root, button, show_in_main, title, contents):
 
 
 def create_sidebar_left(root, show_in_main):
-    # === Container chính ===
     container = tk.Frame(root, bg="#FFFFFF")
     container.pack(side="left", fill="y")
 
@@ -45,16 +43,12 @@ def create_sidebar_left(root, show_in_main):
     sidebar_left.pack(side="left", fill="y")
     sidebar_left.pack_propagate(False)
 
-    # === Toggle (mở / đóng sidebar) ===
+    # === Toggle mở/đóng ===
     toggle_frame = tk.Frame(container, bg="#FFFFFF", width=15)
     toggle_frame.pack(side="left", fill="y")
-
-    toggle_icon = tk.Label(
-        toggle_frame, text="<", font=("Arial", 12, "bold"),
-        bg="#FFFFFF", cursor="hand2"
-    )
+    toggle_icon = tk.Label(toggle_frame, text="<", font=("Arial", 12, "bold"),
+                           bg="#FFFFFF", cursor="hand2")
     toggle_icon.pack(padx=5, pady=10)
-
     collapsed = [False]
 
     # === Load icon ===
@@ -75,7 +69,6 @@ def create_sidebar_left(root, show_in_main):
     load("logout", "./photos/logout.png", (25,25))
     load("profile1", "./photos/profile.png", (25,25))
     load("book", "./photos/book.png", (25,25))
-    load("earphone", "./photos/earphone.png", (20,20))
     sidebar_left._icons = icons
 
     # === Logo ===
@@ -84,7 +77,7 @@ def create_sidebar_left(root, show_in_main):
     logo_frame.pack_propagate(False)
 
     def go_home():
-        """Khi click logo → bỏ highlight, reset current_mode, quay về trang chủ"""
+        """Khi click logo → reset trạng thái và quay lại trang chủ"""
         try:
             if hasattr(root, "active_button") and root.active_button is not None:
                 try:
@@ -95,12 +88,8 @@ def create_sidebar_left(root, show_in_main):
 
             root.current_mode = None
             show_in_main("__BACK__", [])
-        except Exception as e:
-            print("⚠️ Lỗi khi click logo:", e)
-            try:
-                show_in_main("__BACK__", [])
-            except Exception:
-                pass
+        except Exception:
+            show_in_main("__BACK__", [])
 
     try:
         img2 = Image.open("./photos/2.png").resize((150,130))
@@ -112,16 +101,21 @@ def create_sidebar_left(root, show_in_main):
                  font=("Arial", 18, "bold")).pack()
         logo_label.bind("<Button-1>", lambda e: go_home())
     except Exception:
-        tk.Button(
-            logo_frame, text="bleu", font=("Arial", 18, "bold"),
-            fg="#1da9fe", bg="#FFFFFF", bd=0, activebackground="#FFFFFF",
-            command=go_home
-        ).pack(pady=20)
+        tk.Button(logo_frame, text="bleu", font=("Arial", 18, "bold"),
+                  fg="#1da9fe", bg="#FFFFFF", bd=0, command=go_home).pack(pady=20)
 
     # === MỤC HỌC ===
     btn_courses = make_button(sidebar_left, "Học", icons["learn"])
     btn_courses.pack(fill="x", pady=5)
 
+    # 🟦 Nút con: Bài học (mới)
+    btn_lesson = make_button(
+        sidebar_left, "Bài học", icons["book"],
+        cmd=lambda: highlight_and_open(root, btn_lesson, show_in_main, "__BACK__", []),
+        padx=40
+    )
+
+    # 🟩 Nút con: Từ vựng
     btn_vocab = make_button(
         sidebar_left, "Từ vựng", icons["vocab"],
         cmd=lambda: highlight_and_open(root, btn_vocab, show_in_main,
@@ -129,8 +123,9 @@ def create_sidebar_left(root, show_in_main):
         padx=40
     )
 
-    courses_sub = [btn_vocab]
+    courses_sub = [btn_lesson, btn_vocab]
     courses_open = False
+
     def toggle_courses():
         nonlocal courses_open
         if courses_open:
@@ -141,36 +136,13 @@ def create_sidebar_left(root, show_in_main):
             for b in courses_sub:
                 b.pack(fill="x", pady=2, after=btn_courses)
             courses_open = True
+
     btn_courses.config(command=toggle_courses)
 
-    # === MỤC LUYỆN TẬP ===
+    # === NÚT LUYỆN TẬP === (tạm thời chưa có chức năng)
     btn_practice = make_button(sidebar_left, "Luyện tập", icons["practice"])
     btn_practice.pack(fill="x", pady=5)
-
-    btn_reading = make_button(
-        sidebar_left, "Reading", icons["book"],
-        cmd=lambda: highlight_and_open(root, btn_reading, show_in_main,
-                                       "Reading", get_all_units()), padx=40
-    )
-    btn_listening = make_button(
-        sidebar_left, "Listening", icons["earphone"],
-        cmd=lambda: highlight_and_open(root, btn_listening, show_in_main,
-                                       "Listening", get_all_units()), padx=40
-    )
-
-    practice_sub = [btn_reading, btn_listening]
-    practice_open = False
-    def toggle_practice():
-        nonlocal practice_open
-        if practice_open:
-            for b in practice_sub:
-                b.pack_forget()
-            practice_open = False
-        else:
-            for b in practice_sub:
-                b.pack(fill="x", pady=2, after=btn_practice)
-            practice_open = True
-    btn_practice.config(command=toggle_practice)
+    # chưa có command: sau này bạn có thể gán cmd=... vào đây
 
     # === CÁC MỤC KHÁC ===
     btn_rank = make_button(
@@ -187,7 +159,7 @@ def create_sidebar_left(root, show_in_main):
     )
     btn_more.pack(fill="x", pady=5)
 
-    # === Tài khoản ===
+    # === TÀI KHOẢN ===
     btn_account = make_button(sidebar_left, "Tài khoản", icons["profile"])
     btn_account.pack(fill="x", pady=5)
 
@@ -198,12 +170,12 @@ def create_sidebar_left(root, show_in_main):
         padx=40
     )
     btn_logout = make_button(
-        sidebar_left, "Đăng xuất", icons["logout"],
-        cmd=root.quit, padx=40
+        sidebar_left, "Đăng xuất", icons["logout"], cmd=root.quit, padx=40
     )
 
     account_sub = [btn_profile, btn_logout]
     account_open = False
+
     def toggle_account():
         nonlocal account_open
         if account_open:
@@ -214,6 +186,7 @@ def create_sidebar_left(root, show_in_main):
             for b in account_sub:
                 b.pack(fill="x", pady=2, after=btn_account)
             account_open = True
+
     btn_account.config(command=toggle_account)
 
     # === Toggle Sidebar ===
@@ -225,16 +198,14 @@ def create_sidebar_left(root, show_in_main):
             toggle_icon.config(text=">")
             collapsed[0] = True
         else:
-            sidebar_left.config(width=200, highlightthickness=1, highlightbackground="#e0e0e0")
+            sidebar_left.config(width=200, highlightthickness=1,
+                                highlightbackground="#e0e0e0")
             logo_frame.pack(fill="x")
             btn_courses.pack(fill="x", pady=5)
             if courses_open:
                 for b in courses_sub:
                     b.pack(fill="x", pady=2, after=btn_courses)
             btn_practice.pack(fill="x", pady=5)
-            if practice_open:
-                for b in practice_sub:
-                    b.pack(fill="x", pady=2, after=btn_practice)
             btn_rank.pack(fill="x", pady=5)
             btn_more.pack(fill="x", pady=5)
             btn_account.pack(fill="x", pady=5)
@@ -245,5 +216,4 @@ def create_sidebar_left(root, show_in_main):
             collapsed[0] = False
 
     toggle_icon.bind("<Button-1>", toggle_sidebar)
-
     return container

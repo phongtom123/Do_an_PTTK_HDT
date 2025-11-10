@@ -5,35 +5,46 @@ from sidebar_learning import create_sidebar_learning
 
 
 def show_reading_practice(root, main_frame, sidebar_right_ref,
-                          recreate_sidebar_right, show_in_main, in_reading_mode):
+                          recreate_sidebar_right, show_in_main, in_learning_mode,
+                          readings=None):
 
-    in_reading_mode[0] = True
+    # ✅ Đúng biến
+    in_learning_mode[0] = True
 
+    # Xóa nội dung cũ trong main_frame
     for w in main_frame.winfo_children():
         w.destroy()
 
+    # Ẩn sidebar phải
     if sidebar_right_ref[0] is not None:
         try:
             sidebar_right_ref[0].pack_forget()
             sidebar_right_ref[0].destroy()
-        except:
+        except Exception:
             pass
         sidebar_right_ref[0] = None
     root.update_idletasks()
 
+    # Tạo sidebar học tập bên phải
     sidebar_learning = create_sidebar_learning(root, mode="Reading")
     sidebar_right_ref[0] = sidebar_learning
 
     # ------------------ DỮ LIỆU BÀI ĐỌC ------------------
-    readings = [
-        "Reading 1:\n\nThe elephant is the largest land animal...",
-        "Reading 2:\n\nThe cheetah is the fastest land animal...",
-        "Reading 3:\n\nThe penguin is a flightless bird...",
-        "Reading 4:\n\nThe dolphin is an intelligent marine mammal...",
-        "Reading 5:\n\nThe panda is native to China..."
-    ]
+    if readings and len(readings) > 0:
+        # Nếu có dữ liệu từ DB, lấy nội dung thật
+        reading_texts = [r.get_reading_content() for r in readings]
+    else:
+        # Nếu chưa có dữ liệu trong DB, dùng dữ liệu mẫu
+        reading_texts = [
+            "Reading 1:\n\nThe elephant is the largest land animal...",
+            "Reading 2:\n\nThe cheetah is the fastest land animal...",
+            "Reading 3:\n\nThe penguin is a flightless bird...",
+            "Reading 4:\n\nThe dolphin is an intelligent marine mammal...",
+            "Reading 5:\n\nThe panda is native to China..."
+        ]
+
     reading_index = 0
-    highlight_data = {i: [] for i in range(len(readings))}
+    highlight_data = {i: [] for i in range(len(reading_texts))}
 
     # ------------------ TỪ VỰNG QUAN TRỌNG ------------------
     vocab_data = {
@@ -47,8 +58,7 @@ def show_reading_practice(root, main_frame, sidebar_right_ref,
         "intelligent": ("adj", "thông minh"),
     }
 
-    # Biến lưu popup hiện tại (để đảm bảo chỉ mở 1 popup duy nhất)
-    current_popup = None
+    current_popup = None  # popup đang mở
 
     # ------------------ LAYOUT ------------------
     progress_frame = tk.Frame(main_frame, bg="white", height=20)
@@ -72,19 +82,15 @@ def show_reading_practice(root, main_frame, sidebar_right_ref,
         canvas.create_rectangle(0, 0, width, BAR_HEIGHT, fill="#4CAF50", outline="", tags="bar")
 
     def calc_progress():
-        if len(readings) == 1:
+        if len(reading_texts) == 1:
             return 100
-        return int((reading_index / (len(readings) - 1)) * 100)
+        return int((reading_index / (len(reading_texts) - 1)) * 100)
 
     # ------------------ HEADER ------------------
     top_row = tk.Frame(content_frame, bg="white")
     top_row.pack(fill="x", pady=(5, 10), padx=10)
-
-    title_frame = tk.Frame(top_row, bg="white")
-    title_frame.pack(side="left", anchor="w")
-
-    tk.Label(title_frame, text="📖 Reading Practice",
-             font=("Arial", 16, "bold"), bg="white").pack(side="left")
+    tk.Label(top_row, text="📖 Reading Practice",
+             font=("Arial", 16, "bold"), bg="white").pack(anchor="w")
 
     # ------------------ NOTEBOOK ------------------
     notebook = ttk.Notebook(content_frame)
@@ -106,11 +112,10 @@ def show_reading_practice(root, main_frame, sidebar_right_ref,
     exercise_text.pack(fill="both", expand=True)
     exercise_text.configure(state="disabled")
 
-    # ------------------ POPUP TỪ VỰNG (chỉ 1 popup một lúc) ------------------
+    # ------------------ POPUP TỪ VỰNG ------------------
     def show_vocab_popup(word, x, y):
         nonlocal current_popup
 
-        # Đóng popup cũ nếu đang tồn tại
         if current_popup:
             try:
                 current_popup.destroy()
@@ -132,13 +137,12 @@ def show_reading_practice(root, main_frame, sidebar_right_ref,
         tk.Label(popup, text=f"Loại từ: {pos}", font=("Arial", 10), bg="#FFF8DC").pack(anchor="w")
         tk.Label(popup, text=f"Nghĩa: {meaning}", font=("Arial", 10), bg="#FFF8DC").pack(anchor="w")
 
-        current_popup = popup  # Lưu popup đang mở
+        current_popup = popup
 
     # ------------------ UPDATE TEXT ------------------
     def update_text():
         nonlocal reading_index, current_popup
 
-        # Khi chuyển bài → tắt popup nếu còn
         if current_popup:
             try:
                 current_popup.destroy()
@@ -150,14 +154,14 @@ def show_reading_practice(root, main_frame, sidebar_right_ref,
         exercise_text.configure(state="normal")
 
         text_box.delete("1.0", "end")
-        text_box.insert("1.0", readings[reading_index])
+        text_box.insert("1.0", reading_texts[reading_index])
 
         exercise_text.delete("1.0", "end")
         exercise_text.insert("1.0",
             f" Bài tập của Reading {reading_index + 1}\n\n"
-            f"1. Câu hỏi mẫu?\n"
-            f"2. Câu hỏi mẫu khác?\n"
-            f"3. Bạn có thể chọn và tô sáng từ khóa bằng chuột phải!"
+            f"1. Trả lời câu hỏi.\n"
+            f"2. Chọn đáp án đúng.\n"
+            f"3. Tô sáng từ khóa quan trọng bằng chuột phải."
         )
 
         # Highlight từ vựng
@@ -172,18 +176,17 @@ def show_reading_practice(root, main_frame, sidebar_right_ref,
                 text_box.tag_config(word, foreground="#d00000", font=("Arial", 13, "bold"), underline=True)
                 start = end
 
-        # Click vào từ để tra nghĩa
+        # Click vào từ
         def on_word_click(event):
             index = text_box.index(f"@{event.x},{event.y}")
-            tags = text_box.tag_names(index)
-            for tag in tags:
+            for tag in text_box.tag_names(index):
                 if tag in vocab_data:
                     show_vocab_popup(tag, event.x_root, event.y_root)
                     break
 
         text_box.bind("<Button-1>", on_word_click)
 
-        # Khôi phục highlight trong bài tập
+        # Highlight
         exercise_text.tag_delete("highlight")
         exercise_text.tag_config("highlight", background="yellow")
         for (s, e) in highlight_data[reading_index]:
@@ -196,7 +199,7 @@ def show_reading_practice(root, main_frame, sidebar_right_ref,
         exercise_text.configure(state="disabled")
         draw_progress(calc_progress())
 
-    # ------------------ HIGHLIGHT BÀI TẬP ------------------
+    # ------------------ MENU HIGHLIGHT ------------------
     highlight_menu = tk.Menu(root, tearoff=0)
     highlight_menu.add_command(label="Highlight", command=lambda: apply_highlight())
     highlight_menu.add_command(label="❌ Bỏ highlight", command=lambda: remove_highlight())
@@ -215,16 +218,12 @@ def show_reading_practice(root, main_frame, sidebar_right_ref,
             start = exercise_text.index("sel.first")
             end = exercise_text.index("sel.last")
             exercise_text.tag_remove("highlight", start, end)
-            highlight_data[reading_index] = [
-                (s, e) for (s, e) in highlight_data[reading_index]
-                if not (exercise_text.compare(s, ">=", start) and exercise_text.compare(e, "<=", end))
-            ]
         except:
             pass
 
     exercise_text.bind("<Button-3>", lambda e: highlight_menu.tk_popup(e.x_root, e.y_root))
 
-    # ------------------ NÚT ĐIỀU HƯỚNG ------------------
+    # ------------------ NÚT CHUYỂN BÀI ------------------
     def go_prev():
         nonlocal reading_index
         if reading_index > 0:
@@ -233,7 +232,7 @@ def show_reading_practice(root, main_frame, sidebar_right_ref,
 
     def go_next():
         nonlocal reading_index
-        if reading_index < len(readings) - 1:
+        if reading_index < len(reading_texts) - 1:
             reading_index += 1
             update_text()
 

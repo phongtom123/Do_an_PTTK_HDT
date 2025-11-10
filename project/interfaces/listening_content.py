@@ -7,8 +7,8 @@ from pygame import mixer
 from sidebar_learning import create_sidebar_learning
 
 def show_listening_practice(root, main_frame, sidebar_right_ref,
-                            recreate_sidebar_right, show_in_main, in_learning_mode):
-    """Phiên bản đầy đủ của Listening: giữ nguyên giao diện & chức năng nghe nhạc."""
+                            recreate_sidebar_right, show_in_main, in_learning_mode,
+                            listenings=None):
     in_learning_mode[0] = True
 
     # --- Chuẩn bị khung ---

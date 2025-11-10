@@ -1,0 +1,124 @@
+﻿USE bleu;
+
+-- ============================================
+-- 1️⃣ Roles (phân quyền)
+-- ============================================
+INSERT INTO Roles (role_name) VALUES 
+('Admin'),
+('User');
+
+-- ============================================
+-- 2️⃣ Users (người dùng)
+-- ============================================
+INSERT INTO Users (user_name, user_password, user_role_id, user_rank, user_level, user_status) VALUES
+('admin', 'admin123', 1, 999, 99, 1),
+('alice', '123456', 2, 150, 12, 1),
+('bob', 'password', 2, 120, 8, 1),
+('charlie', 'abcdef', 2, 90, 6, 1),
+('daisy', 'pass123', 2, 75, 4, 1);
+
+-- ============================================
+-- 3️⃣ Units (cấp độ học lớn)
+-- ============================================
+INSERT INTO Units (unit_name) VALUES
+('Unit 1: Daily Routines'),
+('Unit 2: Food and Drinks'),
+('Unit 3: Animals and Nature'),
+('Unit 4: Hobbies and Sports');
+
+-- ============================================
+-- 4️⃣ Lessons (mỗi unit có nhiều bài học)
+-- ============================================
+INSERT INTO Lessons (lesson_unit_id, lesson_name) VALUES
+(1, 'Lesson 1: Morning Routine'),
+(1, 'Lesson 2: Evening Routine'),
+(2, 'Lesson 3: Favorite Foods'),
+(2, 'Lesson 4: In the Restaurant'),
+(3, 'Lesson 5: Wild Animals'),
+(3, 'Lesson 6: Pets at Home'),
+(4, 'Lesson 7: My Hobbies'),
+(4, 'Lesson 8: Playing Football');
+
+-- ============================================
+-- 5️⃣ Questions (mỗi bài học có nhiều câu hỏi)
+-- ============================================
+INSERT INTO Questions (question_lesson_id, question_unit_id, question_content, question_answer, question_type) VALUES
+(1, 1, 'What time do you get up every day?', 'A', 'reading'),
+(1, 1, 'What do you do after brushing your teeth?', 'B', 'reading'),
+(3, 2, 'What is your favorite food?', 'C', 'listening'),
+(3, 2, 'Which of the following is a fruit?', 'D', 'listening'),
+(5, 3, 'Which animal is the largest land animal?', 'B', 'reading'),
+(6, 3, 'Which animal can bark?', 'A', 'reading'),
+(7, 4, 'Which sport do you like the most?', 'A', 'listening'),
+(8, 4, 'What equipment do you need to play football?', 'C', 'listening');
+
+-- ============================================
+-- 6️⃣ Question_options (đáp án trắc nghiệm)
+-- ============================================
+INSERT INTO Question_options (question_option_question_id, option_1, option_2, option_3, option_4) VALUES
+(1, '6 AM', '7 AM', '8 AM', '9 AM'),
+(2, 'Eat breakfast', 'Go jogging', 'Watch TV', 'Go to bed'),
+(3, 'Pizza', 'Soup', 'Rice', 'Bread'),
+(4, 'Apple', 'Carrot', 'Beef', 'Egg'),
+(5, 'Elephant', 'Dog', 'Rabbit', 'Cat'),
+(6, 'Dog', 'Fish', 'Bird', 'Lion'),
+(7, 'Football', 'Chess', 'Running', 'Basketball'),
+(8, 'Ball', 'Book', 'Shoes', 'Chair');
+
+-- ============================================
+-- 7️⃣ Readings (bài đọc hiểu)
+-- ============================================
+INSERT INTO Readings (reading_question_id, reading_content) VALUES
+(1, 'John wakes up at 6 AM every day. He brushes his teeth and eats breakfast before going to work.'),
+(2, 'After brushing his teeth, John likes to go jogging in the park.'),
+(5, 'The elephant is the largest land animal. It lives in Africa and Asia.'),
+(6, 'Dogs are friendly animals that live with humans. They can bark and are very loyal.');
+
+-- ============================================
+-- 8️⃣ Listenings (bài nghe)
+-- ============================================
+INSERT INTO Listenings (listening_question_id, listening_content, listening_audio) VALUES
+(3, 'Listen to the conversation about food preferences.', 'audio_food_1.mp3'),
+(4, 'Listen and choose which item is a fruit.', 'audio_food_2.mp3'),
+(7, 'Listen to a dialogue about sports and hobbies.', 'audio_hobby_1.mp3'),
+(8, 'Listen to a short talk about football.', 'audio_hobby_2.mp3');
+
+-- ============================================
+-- 9️⃣ Words (từ vựng flashcard)
+-- ============================================
+INSERT INTO Words (word, word_meaning, word_status, word_difficulty, word_lesson_id) VALUES
+('wake up', 'thức dậy', 'active', 'easy', 1),
+('brush teeth', 'đánh răng', 'active', 'easy', 1),
+('breakfast', 'bữa sáng', 'active', 'easy', 1),
+('pizza', 'bánh pizza', 'active', 'medium', 3),
+('apple', 'quả táo', 'active', 'easy', 3),
+('elephant', 'con voi', 'active', 'medium', 5),
+('dog', 'con chó', 'active', 'easy', 6),
+('football', 'bóng đá', 'active', 'easy', 8);
+
+-- ============================================
+-- 🔟 Learnings (tiến trình học)
+-- ============================================
+INSERT INTO Learnings (learning_user_id, learning_unit_id, learning_finished_time, learning_score, learning_is_pass, learning_user_progress, learning_date) VALUES
+(2, 1, NOW(), 8.5, TRUE, 'Completed', NOW()),
+(3, 2, NOW(), 7.0, TRUE, 'Completed', NOW()),
+(4, 3, NOW(), 5.5, FALSE, 'In progress', NOW());
+
+-- ============================================
+-- 11️⃣ Games (thành tích mini game)
+-- ============================================
+INSERT INTO Games (game_user_id, correct_word_quantity) VALUES
+(2, 20),
+(3, 15),
+(4, 8),
+(5, 12);
+
+-- ============================================
+-- 12️⃣ Answers (câu trả lời của người học)
+-- ============================================
+INSERT INTO Answers (answer_question_id, answer_user_id, answer_user_answer) VALUES
+(1, 2, 'A'),
+(2, 2, 'B'),
+(3, 3, 'C'),
+(4, 4, 'A'),
+(5, 5, 'B');

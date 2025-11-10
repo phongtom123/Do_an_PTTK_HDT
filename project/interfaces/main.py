@@ -32,7 +32,7 @@ recreate_sidebar_right()
 in_learning_mode = [False]
 
 # --- Biến nhớ chế độ hiện tại ---
-current_mode = [None]
+current_mode = [None]   # sẽ là "Reading" hoặc "Listening"
 
 # --- Reset sidebar phải ---
 def reset_sidebar():
@@ -69,10 +69,9 @@ def create_header(root, part_text="Phần 9", title_text="Bài mới mỗi ngày
 
     return header
 
-# --- Danh sách unit (Trang chủ) ---
+# --- Danh sách unit ---
 def show_lesson_list():
     reset_sidebar()
-    current_mode[0] = "Home" # Đặt lại chế độ
     for w in main_frame.winfo_children():
         w.destroy()
 
@@ -83,7 +82,6 @@ def show_lesson_list():
     container_frame = tk.Frame(main_frame, bg="#f9f9f9")
     container_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-    # ... (Code Canvas và Scrollbar của bạn) ...
     canvas = tk.Canvas(container_frame, bg="#f9f9f9", highlightthickness=0)
     scrollbar = tk.Scrollbar(container_frame, orient="vertical", command=canvas.yview)
     scrollable_frame = tk.Frame(canvas, bg="#f9f9f9")
@@ -100,7 +98,7 @@ def show_lesson_list():
     canvas.configure(yscrollcommand=scrollbar.set)
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
-    
+
     for unit in units:
         unit_name = unit[1] if isinstance(unit, (tuple, list)) else str(unit)
 
@@ -119,7 +117,7 @@ def show_lesson_list():
 
         def open_unit_lessons(u):
             lessons = [f"Lesson {i}" for i in range(1, 6)]
-            # Truyền luôn chế độ hiện tại (lúc này là "Home")
+            # truyền luôn chế độ hiện tại
             show_in_main(u, lessons, current_mode[0])
 
         tk.Button(inner, text="ÔN TẬP", font=("Arial", 11, "bold"),
@@ -128,88 +126,74 @@ def show_lesson_list():
                   width=10, height=1,
                   command=lambda u=unit_name: open_unit_lessons(u)).pack(side="right")
 
-# --- BỘ ĐIỀU KHIỂN HIỂN THỊ CHÍNH ---
+# --- Hiển thị danh sách lesson ---
 def show_in_main(title, contents, mode=None):
     reset_sidebar()
 
-    # === KHỐI 1: XỬ LÝ CÁC TRANG TRỰC TIẾP ===
-    # (Các trang này không phải là danh sách)
-
-    if title == "__BACK__":
-        show_lesson_list() # Quay về trang chủ
-        return
-
-    if title == "Game":
+# === 2 if này của Game ===
+    if title == "Game": # Nếu nút "Chơi Game" được bấm
         current_mode[0] = "Game"
         create_game_screen(main_frame)
-        return 
+        return # Dừng hàm tại đây
 
-    # SỬA 1: Đảm bảo string khớp với sidebar_left.py (Thường là "History")
-    if title == "History": 
-        current_mode[0] = "History"
+    if title == "lịch sử": # Nếu nút "Lịch sử" được bấm
+        current_mode[0] = "lịch sử"
         create_history_screen(main_frame)
-        return
-    
-    # SỬA 2: Đảm bảo string khớp với sidebar_left.py ("Xếp hạng")
+        return # Dừng hàm tại đây
+
+# === if này của Ranking ===
     if title == "Xếp hạng":
         current_mode[0] = "Xếp hạng"
+        
+        # 1. Xóa nội dung cũ trên main_frame
         for w in main_frame.winfo_children():
             w.destroy()
+            
+        # 2. Tạo instance của class Ranking và pack vào main_frame
+        #    Class Ranking(tk.Frame) sẽ tự vẽ nội dung của nó
         ranking_page = Ranking(main_frame)
         ranking_page.pack(fill="both", expand=True)
-        return 
+        return # Dừng hàm tại đây
 
-    # === KHỐI 2: XỬ LÝ CÁC TRANG HIỂN THỊ DANH SÁCH ===
-    # (Nếu code chạy đến đây, nghĩa là title là "Reading", "Listening", "Trò chơi", v.v.)
-
-    # SỬA 3: Ghi lại chế độ cho TẤT CẢ các loại danh sách
-    if title in ("Reading", "Listening", "Trò chơi"):
+    # Nếu là nhấn từ sidebar thì ghi lại chế độ
+    if title in ("Reading", "Listening"):
         current_mode[0] = title
-    
-    # Xóa frame
+
+    # Nếu là quay lại
+    if title == "__BACK__":
+        show_lesson_list()
+        return
+
     for w in main_frame.winfo_children():
         w.destroy()
 
-    # SỬA 4: Thêm logic màu sắc cho header "Trò chơi"
-    if title == "Trò chơi":
-        color = "#0078d4" # Màu xanh đậm của Game
-        back_part = "Home"
-    else: 
-        color = "#1da9fe" # Màu xanh nhạt của Reading/Listening
-        back_part = "Units"
-        
-    create_header(main_frame, part_text=back_part,
-                  title_text=f"Nội dung {title}", 
-                  color=color,
-                  back_callback=show_lesson_list) # Luôn quay về trang chủ (list units)
+    create_header(main_frame, part_text="Units",
+                  title_text=f"Nội dung {title}", back_callback=show_lesson_list)
 
-    # Tạo nội dung danh sách
     lessons = []
     for item in contents:
         lesson = {"title": str(item), "status": "Chưa học"}
 
         def lesson_callback(x=item):
+            # đóng sidebar_right
             if sidebar_right_ref[0] is not None:
                 sidebar_right_ref[0].pack_forget()
                 sidebar_right_ref[0].destroy()
                 sidebar_right_ref[0] = None
 
-            # SỬA 5: Thêm logic cho nút "HỌC" của "Trò chơi"
+                        # Nếu trước đó chọn Listening → mở listening_content
             if current_mode[0] == "Listening":
                 show_listening_practice(root, main_frame, sidebar_right_ref,
                                         recreate_sidebar_right, show_in_main, in_learning_mode)
-            elif current_mode[0] == "Trò chơi":
-                # Khi bấm "HỌC" trong danh sách "Trò chơi" -> Mở game
-                create_game_screen(main_frame)
             else:
-                # Mặc định là Reading
+                # Mặc định luôn mở Reading
                 show_reading_practice(root, main_frame, sidebar_right_ref,
                                       recreate_sidebar_right, show_in_main, in_learning_mode)
+
 
         lesson["button_cmd"] = lesson_callback
         lessons.append(lesson)
 
-    # Vẽ danh sách
     container = tk.Frame(main_frame, bg="#f9f9f9")
     container.pack(fill="both", expand=True, padx=20, pady=10)
 
@@ -233,6 +217,6 @@ def show_in_main(title, contents, mode=None):
 # --- Giao diện chính ---
 create_sidebar_left(root, show_in_main)
 main_frame.pack(side="left", fill="both", expand=True)
-show_lesson_list() # Bắt đầu ở trang chủ
+show_lesson_list()
 
 root.mainloop()

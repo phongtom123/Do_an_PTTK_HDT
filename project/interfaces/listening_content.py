@@ -2,13 +2,14 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
-import threading, time
+# SỬA: Không cần 'threading' nữa
+import time 
 from pygame import mixer
 from sidebar_learning import create_sidebar_learning
 
 def show_listening_practice(root, main_frame, sidebar_right_ref,
                             recreate_sidebar_right, show_in_main, in_learning_mode):
-    """Phiên bản đầy đủ của Listening: giữ nguyên giao diện & chức năng nghe nhạc."""
+    """Phiên bản đã sửa lỗi, dùng root.after() thay vì threading."""
     in_learning_mode[0] = True
 
     # --- Chuẩn bị khung ---
@@ -56,7 +57,8 @@ def show_listening_practice(root, main_frame, sidebar_right_ref,
     current = 0
     is_playing = False
     start_time = 0
-    update_thread = None
+    # SỬA: Không cần 'update_thread' nữa
+    # update_thread = None 
 
     # --- Thanh tiến trình ---
     progress = ttk.Progressbar(content_frame, orient="horizontal", mode="determinate")
@@ -76,24 +78,33 @@ def show_listening_practice(root, main_frame, sidebar_right_ref,
         total = 0
         time_label.config(text="00:00 / 00:00")
 
-    # --- Cập nhật tiến độ ---
+    # --- SỬA: Hàm Cập nhật tiến độ (dùng after) ---
     def updater():
         nonlocal current, start_time, is_playing
-        while is_playing:
-            elapsed = time.time() - start_time
-            now = min(current + elapsed, total)
-            progress["value"] = (now / total) * 100 if total else 0
-            time_label.config(text=f"{fmt(now)} / {fmt(total)}")
-            if now >= total:
-                is_playing = False
-                play_btn.config(text="▶ Play", bg="#2ecc71")
-                current = total
-                break
-            time.sleep(0.2)
+        
+        # Bẫy lỗi TclError phòng khi widget bị hủy (khi chuyển tab)
+        try:
+            if is_playing:
+                elapsed = time.time() - start_time
+                now = min(current + elapsed, total)
+                progress["value"] = (now / total) * 100 if total else 0
+                time_label.config(text=f"{fmt(now)} / {fmt(total)}")
+                
+                if now >= total:
+                    is_playing = False
+                    play_btn.config(text="▶ Play", bg="#2ecc71")
+                    current = total
+                else:
+                    # Lên lịch tự gọi lại sau 200ms
+                    progress.after(200, updater) 
+        except tk.TclError:
+            # Widget đã bị hủy (do chuyển tab), dừng vòng lặp
+            is_playing = False
+            pass
 
-    # --- Điều khiển ---
+    # --- SỬA: Hàm Điều khiển (không dùng thread) ---
     def play_pause():
-        nonlocal is_playing, start_time, current, update_thread
+        nonlocal is_playing, start_time, current
         if not is_playing:
             try:
                 mixer.music.load(audio_path)
@@ -104,8 +115,9 @@ def show_listening_practice(root, main_frame, sidebar_right_ref,
             start_time = time.time()
             is_playing = True
             play_btn.config(text="⏸ Pause", bg="#e67e22")
-            update_thread = threading.Thread(target=updater, daemon=True)
-            update_thread.start()
+            
+            # SỬA: Khởi động vòng lặp updater (an toàn)
+            updater() 
         else:
             elapsed = time.time() - start_time
             current += elapsed
@@ -119,7 +131,7 @@ def show_listening_practice(root, main_frame, sidebar_right_ref,
             elapsed = time.time() - start_time
             current += elapsed
         mixer.music.stop()
-        is_playing = False
+        is_playing = False # Vòng lặp updater sẽ tự dừng
         play_btn.config(text="▶ Play", bg="#2ecc71")
         if reset:
             current = 0
@@ -128,15 +140,20 @@ def show_listening_practice(root, main_frame, sidebar_right_ref,
 
     def seek(event):
         nonlocal current, start_time
-        width = event.widget.winfo_width()
-        pct = event.x / width
-        current = pct * total
-        progress["value"] = pct * 100
-        if is_playing:
-            mixer.music.stop()
-            mixer.music.play(start=current)
-            start_time = time.time()
-        time_label.config(text=f"{fmt(current)} / {fmt(total)}")
+        # (Hàm này giữ nguyên, không cần sửa)
+        try:
+            width = event.widget.winfo_width()
+            pct = event.x / width
+            current = pct * total
+            progress["value"] = pct * 100
+            if is_playing:
+                mixer.music.stop()
+                mixer.music.play(start=current)
+                start_time = time.time()
+            time_label.config(text=f"{fmt(current)} / {fmt(total)}")
+        except tk.TclError:
+             # Bỏ qua lỗi nếu widget đã bị hủy
+            pass
 
     # --- Nút điều khiển ---
     btn_frame = tk.Frame(content_frame, bg="white")
@@ -165,7 +182,7 @@ def show_listening_practice(root, main_frame, sidebar_right_ref,
 
     # --- Thoát Unit ---
     def exit_unit():
-        stop(True)
+        stop(True) # Dừng nhạc và dừng vòng lặp updater
         for w in main_frame.winfo_children():
             w.destroy()
         if sidebar_right_ref[0] is not None:

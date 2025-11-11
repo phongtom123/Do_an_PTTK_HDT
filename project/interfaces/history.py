@@ -2,10 +2,28 @@ import tkinter as tk
 from tkinter import ttk
 
 def create_history_screen(parent):
-    
     # Xóa mọi thứ đang có trên frame 'parent' trước khi vẽ
     for widget in parent.winfo_children():
         widget.destroy()
+
+# --- Cấu hình Style ---
+        style = ttk.Style()
+        style.theme_use("clam")
+        
+        style.configure("Treeview.Heading",
+                        font=("Arial", 14, "bold"),
+                        background="#2c3e50",
+                        foreground="white",
+                        relief="flat")
+        style.map("Treeview.Heading", background=[('active', '#34495e')])
+        
+        style.configure("Treeview",
+                        highlightthickness=0,
+                        bd=0,
+                        font=('Arial', 12),
+                        rowheight=40,
+                        fieldbackground="#ffffff")
+        style.layout("Treeview", [('Treeview.treearea', {'sticky': 'nswe'})])
 
     # Đặt màu nền cho frame cha
     parent.config(bg="white")

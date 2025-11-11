@@ -6,30 +6,63 @@ import time
 # ==========================================================
 # ===                 NGÂN HÀNG TỪ VỰNG                  ===
 # ==========================================================
-# (Bạn có thể thêm bao nhiêu từ tùy thích vào đây)
 WORD_BANK = {
-    "Cat": "Con mèo",
-    "Dog": "Con chó",
-    "Sun": "Mặt trời",
-    "Moon": "Mặt trăng",
-    "House": "Ngôi nhà",
-    "Tree": "Cái cây",
-    "Water": "Nước",
-    "Book": "Quyển sách",
-    "Teacher": "Giáo viên",
-    "Student": "Học sinh",
-    "Hello": "Xin chào",
-    "Goodbye": "Tạm biệt"
+    "Cat": "Con mèo", "Dog": "Con chó", "Sun": "Mặt trời", "Moon": "Mặt trăng",
+    "House": "Ngôi nhà", "Tree": "Cái cây", "Water": "Nước", "Book": "Quyển sách",
+    "Teacher": "Giáo viên", "Student": "Học sinh", "Hello": "Xin chào", "Goodbye": "Tạm biệt"
 }
 
 # --- Biến toàn cục cho logic game ---
 selected_english_button = None
 selected_vietnamese_button = None
 matches_found = 0
-game_running = True # Sẽ chuyển thành False khi hết giờ
+game_running = True
 
-
+# ==========================================================
+# ===        HÀM 1: TRANG BẮT ĐẦU (MÀN HÌNH MỚI)         ===
+# ==========================================================
 def create_game_screen(parent):
+    """
+    Hàm này bây giờ chỉ vẽ MÀN HÌNH CHỜ (Start Page).
+    Hàm này được gọi bởi main.py khi bạn bấm "Chơi Game".
+    """
+    
+    # 1. Dọn dẹp màn hình
+    for widget in parent.winfo_children():
+        widget.destroy()
+    parent.config(bg="white")
+
+    # 2. Tạo một khung chứa ở giữa
+    start_frame = tk.Frame(parent, bg="white")
+    start_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+    # 3. Tiêu đề game
+    tk.Label(start_frame, text="Trò chơi Nối Từ", 
+             font=("Arial", 28, "bold"), bg="white").pack(pady=20)
+
+    # 4. Hướng dẫn
+    tk.Label(start_frame, text="Nối 4 cặp từ Tiếng Anh - Tiếng Việt chính xác.\nBạn có 60 giây để ghi điểm!", 
+             font=("Arial", 14), bg="white", justify="center").pack(pady=10)
+
+    # 5. Nút Bắt Đầu
+    start_button = tk.Button(start_frame, text="🚀 BẮT ĐẦU", 
+                             font=("Arial", 16, "bold"), 
+                             bg="#0078d4", fg="white", 
+                             bd=0, padx=30, pady=10,
+                             activebackground="#005a9e",
+                             activeforeground="white",
+                             # Khi bấm, gọi hàm logic game
+                             command=lambda: start_actual_game(parent))
+    start_button.pack(pady=30)
+
+# ==========================================================
+# ===          HÀM 2: LOGIC CHƠI GAME THỰC SỰ            ===
+# ==========================================================
+def start_actual_game(parent):
+    """
+    Hàm này chứa toàn bộ logic game (đếm ngược, 8 ô, v.v.)
+    Nó được gọi khi bạn bấm nút "BẮT ĐẦU".
+    """
     global selected_english_button, selected_vietnamese_button, matches_found, game_running
     
     # --- Reset biến game mỗi khi bắt đầu ---
@@ -38,59 +71,64 @@ def create_game_screen(parent):
     matches_found = 0
     game_running = True
     
-    # --- 1. DỌN DẸP MÀN HÌNH ---
+    # --- 1. DỌN DẸP MÀN HÌNH (Xóa trang "Bắt đầu") ---
     for widget in parent.winfo_children():
         widget.destroy()
 
     parent.config(bg="white")
 
-    # --- 2. TÙY CHỈNH STYLE ---
+    # --- 2. TÙY CHỈNH STYLE (Chỉ còn style cho nút) ---
     style = ttk.Style()
-    style.configure("timer.Horizontal.TProgressbar", 
-                    thickness=15, 
-                    background='#0078d4',
-                    troughcolor='#E0E0E0')
-    
-    # Style cho các nút từ
     style.configure("Word.TButton", font=("Arial", 14), padding=10)
     style.map("Word.TButton",
         background=[('active', '#e0e0e0'), ('disabled', '#f5f5f5')],
         foreground=[('disabled', '#b0b0b0')]
     )
-    # Style cho nút đã chọn
     style.configure("Selected.TButton", font=("Arial", 14), padding=10, background="#0078d4")
 
 
     # --- 3. VẼ GIAO DIỆN ---
     
-    # --- Vòng đếm ngược thời gian (Giữ nguyên) ---
+    # === SỬA: DÙNG CANVAS CHO VÒNG TRÒN ===
     timer_frame = tk.Frame(parent, bg="white")
     timer_frame.pack(pady=20)
     
-    timer_progress = ttk.Progressbar(timer_frame, 
-                                     orient="horizontal", 
-                                     length=200, 
-                                     mode="determinate", 
-                                     style="timer.Horizontal.TProgressbar")
-    timer_progress.pack(pady=5)
+    # Tạo một Canvas (khung vẽ)
+    timer_canvas = tk.Canvas(timer_frame, width=200, height=200, bg="white", highlightthickness=0)
+    timer_canvas.grid(row=0, column=0) # Đặt canvas vào ô 0,0
 
+    # Vẽ vòng tròn nền (màu xám)
+    timer_canvas.create_arc(10, 10, 190, 190,  # Tọa độ (x1, y1, x2, y2)
+                              start=90,        # Bắt đầu từ 12 giờ
+                              extent=360,      # Vẽ 360 độ (cả vòng)
+                              style=tk.ARC,
+                              outline="#E0E0E0", # Màu xám nhạt
+                              width=15)        # Độ dày
+    
+    # Vẽ vòng tròn tiến trình (màu xanh) - Lưu ID của nó lại
+    progress_arc = timer_canvas.create_arc(10, 10, 190, 190,
+                                             start=90,
+                                             extent=360, # Bắt đầu 360 độ (đầy)
+                                             style=tk.ARC,
+                                             outline="#0078d4", # Màu xanh
+                                             width=15)
+
+    # Đặt Label (chữ số) đè lên trên Canvas
     timer_label = tk.Label(timer_frame, text="01:00",
                            font=("Arial", 36, "bold"), 
                            bg="white", fg="#333333")
-    timer_label.pack()
+    timer_label.grid(row=0, column=0) # Đặt vào cùng ô 0,0
 
-    # --- Khu vực chơi game (Mới) ---
+    # --- Khu vực chơi game (Giữ nguyên) ---
     game_area = tk.Frame(parent, bg="white")
     game_area.pack(fill="x", expand=True, pady=20, padx=50)
 
-    # Chia làm 2 cột
     left_column = tk.Frame(game_area, bg="white")
     left_column.pack(side="left", fill="x", expand=True, padx=(0, 20))
     
     right_column = tk.Frame(game_area, bg="white")
     right_column.pack(side="right", fill="x", expand=True, padx=(20, 0))
 
-    # Tạo 8 nút và lưu vào list
     english_buttons = []
     for _ in range(4):
         btn = ttk.Button(left_column, text="...", style="Word.TButton")
@@ -103,10 +141,9 @@ def create_game_screen(parent):
         btn.pack(fill="x", pady=10)
         vietnamese_buttons.append(btn)
 
-    # --- 4. LOGIC GAME ---
+    # --- 4. LOGIC GAME (Giữ nguyên) ---
 
     def reset_selection():
-        """Reset màu của 2 nút đã chọn (nếu có)"""
         global selected_english_button, selected_vietnamese_button
         if selected_english_button:
             selected_english_button.configure(style="Word.TButton")
@@ -116,77 +153,60 @@ def create_game_screen(parent):
         selected_vietnamese_button = None
 
     def check_for_match():
-        """Kiểm tra xem 2 nút đã chọn có khớp không"""
         global matches_found
         
-        # Nếu chưa chọn đủ 2 nút thì không làm gì
         if not selected_english_button or not selected_vietnamese_button:
             return
 
         eng_word = selected_english_button.cget("text")
         vie_word = selected_vietnamese_button.cget("text")
 
-        # Kiểm tra trong ngân hàng từ
         if WORD_BANK.get(eng_word) == vie_word:
-            # === NẾU ĐÚNG ===
             selected_english_button.config(text=f"✓ {eng_word}", state="disabled")
             selected_vietnamese_button.config(text=f"✓ {vie_word}", state="disabled")
             matches_found += 1
         else:
-            # === NẾU SAI ===
-            # (Bạn có thể thêm hiệu ứng nháy đỏ ở đây nếu muốn)
             pass 
         
-        # Dù đúng hay sai, reset lựa chọn để chơi tiếp
         reset_selection()
         
-        # Nếu tìm đủ 4 cặp, tải vòng mới
         if matches_found == 4:
             matches_found = 0
-            parent.after(500, load_new_round) # Chờ 0.5s rồi tải vòng mới
+            parent.after(500, load_new_round) 
 
     def on_english_select(button):
-        """Khi bấm vào 1 nút tiếng Anh"""
         global selected_english_button
-        if not game_running: return # Ngừng nếu hết giờ
+        if not game_running: return 
 
-        if selected_english_button: # Bỏ chọn nút cũ
+        if selected_english_button: 
             selected_english_button.configure(style="Word.TButton")
             
-        selected_english_button = button # Chọn nút mới
+        selected_english_button = button 
         selected_english_button.configure(style="Selected.TButton")
         check_for_match()
 
     def on_vietnamese_select(button):
-        """Khi bấm vào 1 nút tiếng Việt"""
         global selected_vietnamese_button
-        if not game_running: return # Ngừng nếu hết giờ
+        if not game_running: return 
 
-        if selected_vietnamese_button: # Bỏ chọn nút cũ
+        if selected_vietnamese_button: 
             selected_vietnamese_button.configure(style="Word.TButton")
             
-        selected_vietnamese_button = button # Chọn nút mới
+        selected_vietnamese_button = button 
         selected_vietnamese_button.configure(style="Selected.TButton")
         check_for_match()
         
     def load_new_round():
-        """Tải 4 cặp từ mới lên các nút"""
-        
-        # Lấy 4 từ tiếng Anh ngẫu nhiên
         if len(WORD_BANK) < 4:
             print("Lỗi: Cần ít nhất 4 từ trong WORD_BANK")
             return
             
         sample_keys = random.sample(list(WORD_BANK.keys()), 4)
-        
-        # Lấy các từ tiếng Việt tương ứng
         vietnamese_words = [WORD_BANK[key] for key in sample_keys]
         
-        # Xáo trộn 2 danh sách
         random.shuffle(sample_keys)
         random.shuffle(vietnamese_words)
         
-        # Gán từ mới cho 8 nút
         for i in range(4):
             english_buttons[i].config(text=sample_keys[i], state="normal",
                                     command=lambda b=english_buttons[i]: on_english_select(b))
@@ -195,28 +215,22 @@ def create_game_screen(parent):
                                        command=lambda b=vietnamese_buttons[i]: on_vietnamese_select(b))
 
     def game_over():
-        """Hàm được gọi khi hết giờ"""
         global game_running
         game_running = False
         timer_label.config(text="00:00")
-        timer_progress.config(value=0)
         
-        # Vô hiệu hóa tất cả các nút
+        # SỬA: Cập nhật vòng tròn về 0 độ
+        timer_canvas.itemconfig(progress_arc, extent=0)
+        
         for i in range(4):
             english_buttons[i].config(state="disabled")
             vietnamese_buttons[i].config(state="disabled")
         
-        # (Bạn có thể thêm 1 Label "Hết giờ!" ở đây)
-
-
-    # ==========================================================
-    # ===            LOGIC ĐẾM NGƯỢC (Đã sửa)               ===
-    # ==========================================================
-
+    # --- LOGIC ĐẾM NGƯỢC (Đã sửa) ---
     remaining_time = [60] 
 
     def update_timer():
-        if not game_running: # Dừng nếu game đã kết thúc
+        if not game_running: 
             return
 
         try:
@@ -228,15 +242,17 @@ def create_game_screen(parent):
                 mins, secs = divmod(current_time, 60)
                 timer_label.config(text=f"{mins:02d}:{secs:02d}")
                 
-                progress_value = (current_time / 60) * 100
-                timer_progress.config(value=progress_value)
+                # SỬA: Cập nhật độ dài của VÒNG TRÒN
+                # 60 giây = 360 độ, vậy 1 giây = 6 độ
+                angle = current_time * 6 
+                timer_canvas.itemconfig(progress_arc, extent=angle)
 
                 parent.after(1000, update_timer)
             else:
-                game_over() # Hết giờ
+                game_over() 
         
         except tk.TclError:
-            pass # Widget đã bị hủy, dừng vòng lặp
+            pass 
 
     # --- 5. KÍCH HOẠT GAME ---
     load_new_round() # Tải vòng đầu tiên

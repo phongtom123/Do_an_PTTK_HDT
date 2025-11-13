@@ -3,11 +3,14 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import os
 
+# --- THAY ĐỔI 1: IMPORT CLASS 'db' TỪ FILE db.py ---
+from db.db import db 
+
 class Ranking(tk.Frame):
     def __init__(self, master):
         super().__init__(master, bg="#f0f0f0")
 
-        # --- Cấu hình Style ---
+        # --- Cấu hình Style (Giữ nguyên) ---
         style = ttk.Style(self)
         style.theme_use("clam")
         
@@ -32,27 +35,26 @@ class Ranking(tk.Frame):
         tree_frame = tk.Frame(self)
         tree_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-        # --- Cấu hình Treeview ---
-        # Ta hiển thị thêm cột '#0' để có thể hiện ảnh giữa các cột
+        # --- Cấu hình Treeview (Giữ nguyên) ---
         columns = ('rank', 'name', 'score')
         self.tree = ttk.Treeview(tree_frame, columns=columns, show='tree headings')
 
-        # Thứ tự mong muốn: Hạng | Ảnh | Tên | Điểm
         self.tree.heading('rank', text='Hạng', anchor="center")
         self.tree.column('rank', width=120, anchor="center", stretch=False)
 
-        self.tree.heading('#0', text='', anchor="center")  # Hiện tiêu đề "Ảnh"
+        self.tree.heading('#0', text='', anchor="center")
         self.tree.column('#0', width=30, anchor="center", stretch=False)
 
         self.tree.heading('name', text='Tên', anchor="w")
         self.tree.column('name', width=160, anchor="w")
 
-        self.tree.heading('score', text='Điểm Số', anchor="center")
-        self.tree.column('score', width=100, anchor="center")
+        # --- THAY ĐỔI 2: Sửa tiêu đề cột điểm ---
+        self.tree.heading('score', text='Điểm Cao Nhất', anchor="center")
+        self.tree.column('score', width=120, anchor="center") # Cho cột rộng hơn 1 chút
 
         self.tree.pack(side="left", fill="both", expand=True)
 
-        # --- Cấu hình Tags ---
+        # --- Cấu hình Tags (Giữ nguyên) ---
         self.tree.tag_configure('top1', background='#FFD700', font=('Arial', 12, 'bold'))
         self.tree.tag_configure('top2', background='#C0C0C0', font=('Arial', 11, 'bold'))
         self.tree.tag_configure('top3', background='#CD7F32', font=('Arial', 11, 'bold'))
@@ -64,28 +66,55 @@ class Ranking(tk.Frame):
         # --- Nạp dữ liệu ---
         self.populate_ranking()
 
+    # --- THAY ĐỔI 3: VIẾT LẠI HÀM ĐỂ LẤY DỮ LIỆU THẬT ---
     def populate_ranking(self):
-        """Hàm tạo dữ liệu và chèn vào Treeview."""
-        base_data = [
-            ("Lê Minh An", "99"),
-            ("Trần Tuấn Bình", "96"),
-            ("Nguyễn Phương Chi", "94"),
-        ]
+        """Hàm lấy BXH (điểm cao nhất) từ GameHistory và chèn vào Treeview."""
         
+        # 1. Kết nối và truy vấn DB
+        db_conn = db()
+        
+        # --- THAY ĐỔI 4: CẬP NHẬT CÂU TRUY VẤN SQL ---
+        # Lấy điểm MAX (cao nhất) của mỗi user từ GameHistory
+        query = """
+            SELECT 
+                U.user_name,
+                MAX(H.score) AS highest_score
+            FROM 
+                GameHistory H
+            JOIN 
+                Users U ON H.user_id = U.user_id
+            GROUP BY 
+                U.user_id, U.user_name
+            ORDER BY 
+                highest_score DESC
+            LIMIT 20
+        """
+        
+        df = db_conn.query(query)
+        db_conn.close()
+
+        # 2. Chuẩn bị thư mục ảnh (Giữ nguyên)
         self.image_dir = "photos"
-        # icons = ["🥇", "🥈", "🥉"]  # Gắn icon cho top bảng xếp hạng
-        icons = []
+        icons = [] 
 
-        for i in range(20):  # 20 hàng
-            name, score = base_data[i % len(base_data)]
+        # 3. Kiểm tra nếu không có dữ liệu
+        if df.empty:
+            self.tree.insert('', 'end', values=("", "Chưa có dữ liệu", ""))
+            return
+
+        # 4. Lặp qua DataFrame (dữ liệu thật) và chèn vào bảng
+        for i, row in df.iterrows():
+            # --- THAY ĐỔI 5: CẬP NHẬT TÊN CỘT ĐỂ KHỚP VỚI TRUY VẤN ---
+            name = row['user_name']
+            score = row['highest_score'] # Lấy điểm cao nhất (thay vì user_rank)
             rank_index = i + 1
-
+            
+            # (Phần còn lại giữ nguyên)
             if rank_index <= len(icons):
                 rank_text = f"{icons[i]} Top {rank_index}"
             else:
                 rank_text = f"Top {rank_index}"
 
-            # Chọn tag màu
             tags = ()
             if i == 0:
                 tags = ('top1',)
@@ -96,7 +125,6 @@ class Ranking(tk.Frame):
             elif i % 2 != 0:
                 tags = ('evenrow',)
 
-            # Thêm ảnh
             image_file = 'avataaars.png'
             image_path = os.path.join(self.image_dir, image_file)
 
@@ -109,8 +137,11 @@ class Ranking(tk.Frame):
                                  image=photo_img,
                                  tags=tags)
             except FileNotFoundError:
-                print(f"Lỗi: Không tìm thấy ảnh tại '{image_path}'")
                 self.tree.insert('', 'end',
                                  values=(rank_text, name, score),
                                  tags=tags)
-
+            except Exception as e:
+                print(f"Lỗi khi xử lý ảnh: {e}")
+                self.tree.insert('', 'end',
+                                 values=(rank_text, name, score),
+                                 tags=tags)

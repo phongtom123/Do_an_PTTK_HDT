@@ -8,6 +8,6 @@ def connect_db():
         port=3306,
         user="root",
         password="",
-        database="bleu"
+        database="bleu1"
     )
 

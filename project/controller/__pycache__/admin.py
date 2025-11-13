@@ -13,7 +13,7 @@ def connect_db():
             host="localhost",
             user="root",
             password="",
-            database="bleu"
+            database="bleu1"
         )
     except Error as e:
         messagebox.showerror("Lỗi kết nối", f"Không thể kết nối database:\n{e}")

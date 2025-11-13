@@ -1,5 +1,16 @@
 ﻿import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# --- BẮT ĐẦU SỬA LỖI IMPORT ---
+# Thêm thư mục 'project' (để import 'controller' thành công)
+interfaces_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.dirname(interfaces_dir)
+sys.path.insert(0, project_dir) 
+
+# Thêm thư mục GỐC (để import 'db' thành công)
+root_dir = os.path.dirname(project_dir)
+sys.path.insert(0, root_dir)
+# --- KẾT THÚC SỬA LỖI IMPORT ---
+
 
 import tkinter as tk
 

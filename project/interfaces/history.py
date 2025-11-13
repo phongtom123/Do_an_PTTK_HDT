@@ -1,70 +1,84 @@
 import tkinter as tk
 from tkinter import ttk
+# --- IMPORT DB ---
+# (Đã sửa để trỏ đúng 'db.db' như yêu cầu)
+from db.db import db
 
 def create_history_screen(parent):
-    # Xóa mọi thứ đang có trên frame 'parent' trước khi vẽ
     for widget in parent.winfo_children():
         widget.destroy()
 
-# --- Cấu hình Style ---
-        style = ttk.Style()
-        style.theme_use("clam")
-        
-        style.configure("Treeview.Heading",
-                        font=("Arial", 14, "bold"),
-                        background="#2c3e50",
-                        foreground="white",
-                        relief="flat")
-        style.map("Treeview.Heading", background=[('active', '#34495e')])
-        
-        style.configure("Treeview",
-                        highlightthickness=0,
-                        bd=0,
-                        font=('Arial', 12),
-                        rowheight=40,
-                        fieldbackground="#ffffff")
-        style.layout("Treeview", [('Treeview.treearea', {'sticky': 'nswe'})])
-
-    # Đặt màu nền cho frame cha
+    # (Style giữ nguyên)
+    style = ttk.Style()
+    style.theme_use("clam")
+    style.configure("Treeview.Heading",
+                    font=("Arial", 14, "bold"),
+                    background="#2c3e50",
+                    foreground="white",
+                    relief="flat")
+    style.map("Treeview.Heading", background=[('active', '#34495e')])
+    style.configure("Treeview",
+                    highlightthickness=0,
+                    bd=0,
+                    font=('Arial', 12),
+                    rowheight=40,
+                    fieldbackground="#ffffff")
+    style.layout("Treeview", [('Treeview.treearea', {'sticky': 'nswe'})])
     parent.config(bg="white")
 
-    # --- Frame cho nội dung ---
     history_frame = tk.Frame(parent, bg="white")
     history_frame.pack(expand=True, fill="both", pady=20, padx=50)
 
-    # --- Tiêu đề ---
-    tk.Label(history_frame, text="Lịch sử Game", 
+    # --- THAY ĐỔI 1: SỬA TIÊU ĐỀ ---
+    tk.Label(history_frame, text="Lịch sử Chơi Game", 
              font=("Arial", 18, "bold"), 
              bg="white").pack(pady=(10, 20))
 
-    # --- Bảng Lịch sử ---
-    columns = ("stt", "thoi_gian", "ngay_choi", "dung", "sai")
-    
+    # --- THAY ĐỔI 2: SỬA CÁC CỘT ---
+    columns = ("id", "nguoi_choi", "diem_so", "ngay_choi")
     tree = ttk.Treeview(history_frame, columns=columns, show="headings")
     
-    # Định nghĩa tiêu đề cột
-    tree.heading("stt", text="STT")
-    tree.heading("thoi_gian", text="Thời gian")
+    tree.heading("id", text="ID")
+    tree.heading("nguoi_choi", text="Người chơi")
+    tree.heading("diem_so", text="Điểm")
     tree.heading("ngay_choi", text="Ngày chơi")
-    tree.heading("dung", text="Đáp án đúng")
-    tree.heading("sai", text="Đáp án sai")
 
-    # Định nghĩa độ rộng và căn lề
-    tree.column("stt", width=50, anchor="center")
-    tree.column("thoi_gian", width=100, anchor="center")
-    tree.column("ngay_choi", width=150, anchor="center")
-    tree.column("dung", width=100, anchor="center")
-    tree.column("sai", width=100, anchor="center")
+    tree.column("id", width=50, anchor="center")
+    tree.column("nguoi_choi", width=150, anchor="w")
+    tree.column("diem_so", width=100, anchor="center")
+    tree.column("ngay_choi", width=180, anchor="center")
 
-    # --- Thêm dữ liệu giả vào bảng ---
-    dummy_data = [
-        (1, "0:59", "2023-10-10", 120, 12),
-        (2, "0:55", "2023-10-09", 80, 8),
-        (3, "1:00", "2023-10-09", 150, 0),
-        (4, "0:45", "2023-10-08", 50, 5)
-    ]
+    # --- THAY ĐỔI 3: TRUY VẤN LỊCH SỬ TỪ GameHistory ---
     
-    for item in dummy_data:
-        tree.insert("", "end", values=item)
+    db_conn = db()
+    query = """
+        SELECT 
+            H.history_id, 
+            U.user_name, 
+            H.score,
+            DATE_FORMAT(H.game_date, '%Y-%m-%d %H:%i') AS ngay_choi
+        FROM 
+            GameHistory H
+        JOIN 
+            Users U ON H.user_id = U.user_id
+        ORDER BY 
+            H.game_date DESC
+        LIMIT 20
+    """
+    
+    df = db_conn.query(query)
+    db_conn.close()
+
+    if df.empty:
+        tree.insert("", "end", values=("", "Chưa có lịch sử chơi", "", ""))
+    else:
+        # --- THAY ĐỔI 4: ĐỌC DỮ LIỆU TỪ DATAFRAME ---
+        for index, row in df.iterrows():
+            tree.insert("", "end", values=(
+                row['history_id'], 
+                row['user_name'], 
+                row['score'],
+                row['ngay_choi'] # Tên cột đã được đặt AS 'ngay_choi'
+            ))
 
     tree.pack(expand=True, fill="both")

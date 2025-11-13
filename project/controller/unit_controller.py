@@ -11,7 +11,7 @@ def connect_db():
         port=3306,
         user="root",
         password="",   # nếu bạn có mật khẩu thì thêm vào đây
-        database="bleu"
+        database="bleu1"
     )
 
 # ===============================
@@ -19,7 +19,7 @@ def connect_db():
 # ===============================
 def get_all_units():
     """
-    Lấy danh sách tất cả Units trong database 'bleu'.
+    Lấy danh sách tất cả Units trong database 'bleu1'.
     Trả về danh sách tuple (unit_id, unit_name)
     """
     try:

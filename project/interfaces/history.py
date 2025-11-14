@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
 # --- IMPORT DB ---
-# (Đã sửa để trỏ đúng 'db.db' như yêu cầu)
 from db.db import db
 
 def create_history_screen(parent):
@@ -29,40 +28,40 @@ def create_history_screen(parent):
     history_frame = tk.Frame(parent, bg="white")
     history_frame.pack(expand=True, fill="both", pady=20, padx=50)
 
-    # --- THAY ĐỔI 1: SỬA TIÊU ĐỀ ---
     tk.Label(history_frame, text="Lịch sử Chơi Game", 
              font=("Arial", 18, "bold"), 
              bg="white").pack(pady=(10, 20))
 
-    # --- THAY ĐỔI 2: SỬA CÁC CỘT ---
-    columns = ("id", "nguoi_choi", "diem_so", "ngay_choi")
+    # --- THAY ĐỔI 1: XÓA CỘT "Ngày chơi" ---
+    columns = ("id", "nguoi_choi", "diem_so")
     tree = ttk.Treeview(history_frame, columns=columns, show="headings")
     
-    tree.heading("id", text="ID")
+    tree.heading("id", text="ID Lượt Chơi")
     tree.heading("nguoi_choi", text="Người chơi")
     tree.heading("diem_so", text="Điểm")
-    tree.heading("ngay_choi", text="Ngày chơi")
 
-    tree.column("id", width=50, anchor="center")
-    tree.column("nguoi_choi", width=150, anchor="w")
+    tree.column("id", width=100, anchor="center")
+    tree.column("nguoi_choi", width=200, anchor="w")
     tree.column("diem_so", width=100, anchor="center")
-    tree.column("ngay_choi", width=180, anchor="center")
 
-    # --- THAY ĐỔI 3: TRUY VẤN LỊCH SỬ TỪ GameHistory ---
+    # --- THAY ĐỔI 2: CẬP NHẬT CÂU TRUY VẤN ---
     
     db_conn = db()
+    # Sửa tên bảng: GameHistory -> games
+    # Sửa tên cột: H.history_id -> H.game_id
+    # Sửa tên cột: H.user_id -> H.game_user_id
+    # Xóa cột 'DATE_FORMAT' (vì không tồn tại)
     query = """
         SELECT 
-            H.history_id, 
+            H.game_id, 
             U.user_name, 
-            H.score,
-            DATE_FORMAT(H.game_date, '%Y-%m-%d %H:%i') AS ngay_choi
+            H.score
         FROM 
-            GameHistory H
+            games H
         JOIN 
-            Users U ON H.user_id = U.user_id
+            Users U ON H.game_user_id = U.user_id
         ORDER BY 
-            H.game_date DESC
+            H.game_id DESC
         LIMIT 20
     """
     
@@ -70,15 +69,15 @@ def create_history_screen(parent):
     db_conn.close()
 
     if df.empty:
-        tree.insert("", "end", values=("", "Chưa có lịch sử chơi", "", ""))
+        # --- THAY ĐỔI 3: Cập nhật giá trị rỗng ---
+        tree.insert("", "end", values=("", "Chưa có lịch sử chơi", ""))
     else:
-        # --- THAY ĐỔI 4: ĐỌC DỮ LIỆU TỪ DATAFRAME ---
+        # --- THAY ĐỔI 4: Cập nhật cách đọc dữ liệu ---
         for index, row in df.iterrows():
             tree.insert("", "end", values=(
-                row['history_id'], 
+                row['game_id'], 
                 row['user_name'], 
-                row['score'],
-                row['ngay_choi'] # Tên cột đã được đặt AS 'ngay_choi'
+                row['score']
             ))
 
     tree.pack(expand=True, fill="both")

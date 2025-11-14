@@ -15,55 +15,34 @@ total_score = 0
 # ==========================================================
 # ===       HÀM 0: MÀN HÌNH KẾT QUẢ (Game Over)          ===
 # ==========================================================
+# (Hàm này không thay đổi)
 def show_results_screen(parent, final_score):
-    """
-    Vẽ màn hình kết quả (Game Over) khi hết giờ.
-    Hiển thị điểm cuối cùng và các nút điều hướng.
-    """
-    
-    # 1. Dọn dẹp màn hình chơi game
     for widget in parent.winfo_children():
         widget.destroy()
     parent.config(bg="white")
-
-    # 2. Khung chứa ở giữa
     results_frame = tk.Frame(parent, bg="white")
     results_frame.place(relx=0.5, rely=0.5, anchor="center")
-
-    # 3. Hiển thị thông báo "Hết giờ!"
     tk.Label(results_frame, text="Hết giờ!", 
              font=("Arial", 28, "bold"), bg="white", fg="#e74c3c").pack(pady=10)
-    
-    # 4. Hiển thị "Tổng điểm của bạn:"
     tk.Label(results_frame, text="Tổng điểm của bạn:", 
              font=("Arial", 16), bg="white").pack()
-             
-    # 5. Hiển thị điểm số cuối cùng
     tk.Label(results_frame, text=f"{final_score}", 
              font=("Arial", 40, "bold"), bg="white", fg="#0078d4").pack(pady=20)
-
-    # 6. Nút "Chơi lại"
     play_again_button = tk.Button(results_frame, text="🎮 CHƠI LẠI", 
                                  font=("Arial", 14, "bold"), 
                                  bg="#0078d4", fg="white", 
                                  bd=0, padx=20, pady=10,
                                  activebackground="#005a9e",
                                  activeforeground="white",
-                                 # Khi bấm, quay lại trang Bắt đầu
                                  command=lambda: create_game_screen(parent))
-    # --- THAY ĐỔI: Thêm lề dưới cho nút này ---
     play_again_button.pack(pady=(10, 20)) 
-    
+    # (Nút Lịch sử đã bị xóa theo yêu cầu)
+
 
 # ==========================================================
 # ===        HÀM 1: TRANG BẮT ĐẦU (Start Page)           ===
 # ==========================================================
-# (Hàm này không thay đổi, vẫn là 3 cặp từ)
 def create_game_screen(parent):
-    """
-    Hàm này vẽ MÀN HÌNH CHỜ (Start Page).
-    """
-    
     for widget in parent.winfo_children():
         widget.destroy()
     parent.config(bg="white")
@@ -72,7 +51,8 @@ def create_game_screen(parent):
     tk.Label(start_frame, text="Trò chơi Nối Từ", 
              font=("Arial", 28, "bold"), bg="white").pack(pady=20)
              
-    tk.Label(start_frame, text="Nối 3 cặp từ Tiếng Anh - Tiếng Việt chính xác.\nBạn có 60 giây để ghi điểm!", 
+    # --- THAY ĐỔI 1: Sửa Hướng dẫn (Trở lại 4 cặp) ---
+    tk.Label(start_frame, text="Nối 4 cặp từ Tiếng Anh - Tiếng Việt chính xác.\nBạn có 60 giây để ghi điểm!", 
              font=("Arial", 14), bg="white", justify="center").pack(pady=10)
              
     start_button = tk.Button(start_frame, text="🚀 BẮT ĐẦU", 
@@ -96,6 +76,7 @@ def start_actual_game(parent):
     game_running = True
     total_score = 0
     
+    # (Phần code UI/Style/Vẽ đồng hồ giữ nguyên)
     for widget in parent.winfo_children():
         widget.destroy()
     parent.config(bg="white")
@@ -129,14 +110,15 @@ def start_actual_game(parent):
     right_column = tk.Frame(game_area, bg="white")
     right_column.pack(side="right", fill="x", expand=True, padx=(20, 0))
     
+    # --- THAY ĐỔI 2: Tạo 4 nút (thay vì 3) ---
     english_buttons = []
-    for _ in range(3):
+    for _ in range(4):
         btn = ttk.Button(left_column, text="...", style="Word.TButton")
         btn.pack(fill="x", pady=10)
         english_buttons.append(btn)
         
     vietnamese_buttons = []
-    for _ in range(3):
+    for _ in range(4):
         btn = ttk.Button(right_column, text="...", style="Word.TButton")
         btn.pack(fill="x", pady=10)
         vietnamese_buttons.append(btn)
@@ -144,6 +126,7 @@ def start_actual_game(parent):
     # --- 4. LOGIC GAME (Kết nối Database) ---
 
     def reset_selection():
+        # (Giữ nguyên)
         global selected_english_button, selected_vietnamese_button
         if selected_english_button:
             selected_english_button.configure(style="Word.TButton")
@@ -153,6 +136,7 @@ def start_actual_game(parent):
         selected_vietnamese_button = None
 
     def check_for_match():
+        # (Giữ nguyên)
         global matches_found, total_score
         if not selected_english_button or not selected_vietnamese_button:
             return
@@ -174,11 +158,13 @@ def start_actual_game(parent):
             pass 
         reset_selection()
         
-        if matches_found == 3:
+        # --- THAY ĐỔI 3: Kiểm tra nếu đủ 4 cặp (thay vì 3) ---
+        if matches_found == 4:
             matches_found = 0
             parent.after(500, load_new_round) 
 
     def on_english_select(button):
+        # (Giữ nguyên)
         global selected_english_button
         if not game_running: return 
         if selected_english_button: 
@@ -188,6 +174,7 @@ def start_actual_game(parent):
         check_for_match()
 
     def on_vietnamese_select(button):
+        # (Giữ nguyên)
         global selected_vietnamese_button
         if not game_running: return 
         if selected_vietnamese_button: 
@@ -197,15 +184,20 @@ def start_actual_game(parent):
         check_for_match()
         
     def load_new_round():
+        
         db_conn = db()
-        query = "SELECT word, word_meaning FROM Words ORDER BY RAND() LIMIT 3"
+        
+        # --- THAY ĐỔI 4: Lấy 4 từ (thay vì 3) ---
+        query = "SELECT word, word_meaning FROM Words ORDER BY RAND() LIMIT 4"
+        
         df = db_conn.query(query)
         db_conn.close()
         
-        if df.empty or len(df) < 3:
-            print("Lỗi: Không lấy đủ 3 từ từ database, dùng từ dự phòng")
-            english_words = ['Error', 'Test', 'Fail']
-            vietnamese_words = ['Lỗi', 'Kiểm tra', 'Thất bại']
+        # --- THAY ĐỔI 5: Kiểm tra nếu có ít hơn 4 từ ---
+        if df.empty or len(df) < 4:
+            print("Lỗi: Không lấy đủ 4 từ từ database, dùng từ dự phòng")
+            english_words = ['Error', 'Test', 'Fail', 'Backup']
+            vietnamese_words = ['Lỗi', 'Kiểm tra', 'Thất bại', 'Dự phòng']
         else:
             english_words = df['word'].tolist()
             vietnamese_words = df['word_meaning'].tolist()
@@ -213,7 +205,8 @@ def start_actual_game(parent):
         random.shuffle(english_words)
         random.shuffle(vietnamese_words)
         
-        for i in range(3):
+        # --- THAY ĐỔI 6: Gán vào 4 nút ---
+        for i in range(4):
             english_buttons[i].config(text=english_words[i], state="normal",
                                     command=lambda b=english_buttons[i]: on_english_select(b))
             
@@ -221,10 +214,12 @@ def start_actual_game(parent):
                                        command=lambda b=vietnamese_buttons[i]: on_vietnamese_select(b))
 
     def game_over():
+        # (Giữ nguyên logic "Lựa chọn 2")
         global game_running
         game_running = False
         
-        for i in range(3):
+        # --- THAY ĐỔI 7: Vô hiệu hóa 4 nút ---
+        for i in range(4):
             try:
                 english_buttons[i].config(state="disabled")
                 vietnamese_buttons[i].config(state="disabled")
@@ -235,12 +230,10 @@ def start_actual_game(parent):
         
         db_conn = db()
         
-        # Lệnh 1: INSERT vào GameHistory
         query_insert = "INSERT INTO GameHistory (user_id, score) VALUES (%s, %s)"
         params_insert = (1, total_score) # Tạm dùng user_id = 1 ('admin')
         db_conn.dml_ddl_operator(query_insert, params_insert)
         
-        # Lệnh 2: UPDATE (Cộng dồn) Users
         query_update = "UPDATE Users SET user_rank = IFNULL(user_rank, 0) + %s WHERE user_id = %s"
         params_update = (total_score, 1) # Tạm dùng user_id = 1
         db_conn.dml_ddl_operator(query_update, params_update)

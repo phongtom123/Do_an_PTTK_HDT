@@ -50,11 +50,13 @@ class BLEUApp:
         self.current_btn = None
         self.btn_profile = self.make_sidebar_button("👤  Hồ sơ", self.show_profile)
         self.btn_vocab = self.make_sidebar_button("📚  Từ vựng", self.show_vocab)
-        self.btn_lessons = self.make_sidebar_button("📖  Bài học", lambda: None)
-        self.btn_progress = self.make_sidebar_button("📊  Tiến độ", lambda: None)
+        self.btn_game = self.make_sidebar_button("🎮  Game Matching", self.show_game)
+        self.btn_lessons = self.make_sidebar_button("📖  Bài học", lambda: messagebox.showinfo("Thông báo", "Chức năng đang phát triển"))
+        self.btn_progress = self.make_sidebar_button("📊  Tiến độ", lambda: messagebox.showinfo("Thông báo", "Chức năng đang phát triển"))
         
         self.btn_profile.pack(fill="x", padx=20, pady=6)
         self.btn_vocab.pack(fill="x", padx=20, pady=6)
+        self.btn_game.pack(fill="x", padx=20, pady=6)
         self.btn_lessons.pack(fill="x", padx=20, pady=6)
         self.btn_progress.pack(fill="x", padx=20, pady=6)
         
@@ -118,17 +120,21 @@ class BLEUApp:
             widget.destroy()
 
     # ===========================
-    # 👤 TRANG HỒ SƠ NGƯỜI DÙNG - REDESIGNED
+    # 👤 TRANG HỒ SƠ NGƯỜI DÙNG
     # ===========================
     def show_profile(self):
         self.clear_main()
         
-        # Load data
+        # Load data từ bảng Users
         try:
             conn = connect_db()
             if conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT name, email, level, progress, createDate, account FROM USER LIMIT 1")
+                cursor.execute("""
+                    SELECT user_name, user_level, user_rank, user_status
+                    FROM Users 
+                    LIMIT 1
+                """)
                 data = cursor.fetchone()
                 conn.close()
             else:
@@ -137,10 +143,15 @@ class BLEUApp:
             data = None
 
         if not data:
-            data = ("User 1", "user1@gmail.com", 4, "Đang học Unit 8", "2025-10-27", "🧑‍🎓")
+            data = ("User 1", 4, 0, 1)
 
-        name, email, level, progress, join_date, avatar = data if len(data) == 6 else (*data, "🧑‍🎓")
-        self.current_avatar = avatar if avatar else "🧑‍🎓"
+        name = data[0] if data else "User 1"
+        level = data[1] if data and len(data) > 1 else 4
+        rank = data[2] if data and len(data) > 2 else 0
+        email = "user@bleu.com"
+        join_date = "2025-01-01"
+        progress = f"Level {level}"
+        self.current_avatar = "🧑‍🎓"
 
         # Scrollable container
         canvas = tk.Canvas(self.main_frame, bg="#F8FAFC", highlightthickness=0)
@@ -184,7 +195,7 @@ class BLEUApp:
 
         # Stat 2 - XP
         self.create_gradient_stat_card(
-            stats_row, "⭐", "2,450", "Tổng điểm XP",
+            stats_row, "⭐", str(rank), "Xếp hạng",
             "#FFA94D", "#FFD43B", 1
         ).grid(row=0, column=1, padx=(6, 12), sticky="nsew")
 
@@ -453,12 +464,12 @@ class BLEUApp:
                 fg="#0F172A", bg="white").pack(anchor="w", pady=(0, 22))
         
         # Action buttons
-        self.create_modern_action_btn(content, "✏️", "Chỉnh sửa hồ sơ", "#3B82F6",
-                                     lambda: self.edit_profile(name, email)).pack(fill="x", pady=(0, 14))
-        self.create_modern_action_btn(content, "🔒", "Đổi mật khẩu", "#8B5CF6",
-                                     self.change_password).pack(fill="x", pady=(0, 14))
+        self.create_modern_action_btn(content, "🎮", "Chơi game Matching", "#10B981",
+                                     self.show_game).pack(fill="x", pady=(0, 14))
+        self.create_modern_action_btn(content, "📚", "Xem từ vựng", "#3B82F6",
+                                     self.show_vocab).pack(fill="x", pady=(0, 14))
         self.create_modern_action_btn(content, "⚙️", "Cài đặt", "#64748B",
-                                     self.open_settings).pack(fill="x")
+                                     lambda: messagebox.showinfo("Cài đặt", "Chức năng đang phát triển")).pack(fill="x")
 
     def create_modern_action_btn(self, parent, icon, text, color, command):
         """Modern action button with icon"""
@@ -505,297 +516,19 @@ class BLEUApp:
         return colors.get(hex_color, hex_color)
 
     # ===========================
-    # CHỨC NĂNG EDIT PROFILE (ĐẦY ĐỦ TỪ CODE GỐC)
-    # ===========================
-    def edit_profile(self, current_name, current_email):
-        win = tk.Toplevel(self.root)
-        win.title("✏️ Chỉnh sửa hồ sơ")
-        win.geometry("550x700")
-        win.configure(bg="#E8F4F8")
-        win.resizable(False, False)
-
-        header = tk.Frame(win, bg="#3B82F6", height=80)
-        header.pack(fill="x")
-        header.pack_propagate(False)
-        
-        tk.Label(header, text="✏️ Chỉnh sửa thông tin cá nhân",
-                 font=("Segoe UI", 18, "bold"), fg="white", bg="#3B82F6").pack(pady=25)
-
-        # Canvas với scrollbar
-        canvas = tk.Canvas(win, bg="#E8F4F8", highlightthickness=0)
-        scrollbar = ttk.Scrollbar(win, orient="vertical", command=canvas.yview)
-        form = tk.Frame(canvas, bg="white")
-
-        form.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-
-        canvas.create_window((0, 0), window=form, anchor="nw", width=490)
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        canvas.pack(side="left", fill="both", expand=True, padx=30, pady=20)
-        scrollbar.pack(side="right", fill="y", pady=20)
-
-        # Avatar selection
-        tk.Label(form, text="Chọn Avatar:", bg="white", font=("Segoe UI", 11, "bold"),
-                 fg="#1E3A8A").pack(anchor="w", pady=(15, 10))
-        
-        selected_avatar = tk.StringVar(value=self.current_avatar)
-        
-        preview_frame = tk.Frame(form, bg="#F1F5F9", relief="flat", bd=1)
-        preview_frame.pack(fill="x", pady=(0, 15), ipady=10)
-        
-        preview_label = tk.Label(preview_frame, textvariable=selected_avatar, 
-                                font=("Segoe UI", 50), bg="#F1F5F9")
-        preview_label.pack()
-
-        avatars = [
-            "👨", "👩", "🧑", "😊", "😎", "🤓", "🧑‍🎓", "👨‍💻",
-            "👩‍💻", "🧑‍🏫", "🧙‍♂️", "🧙‍♀️", "🦸‍♂️", "🦸‍♀️", "🧑‍🚀", "🧑‍🎨"
-        ]
-
-        avatar_grid = tk.Frame(form, bg="white")
-        avatar_grid.pack(pady=(0, 15))
-
-        row_idx = 0
-        col_idx = 0
-        for avatar in avatars:
-            btn = tk.Button(avatar_grid, text=avatar, font=("Segoe UI", 28),
-                           bg="#F1F5F9", fg="black", cursor="hand2",
-                           relief="flat", bd=0, width=2, height=1)
-            btn.grid(row=row_idx, column=col_idx, padx=3, pady=3)
-            
-            if avatar == self.current_avatar:
-                btn.config(bg="#DBEAFE", relief="solid", bd=2)
-            
-            def on_click(av=avatar, b=btn):
-                for widget in avatar_grid.winfo_children():
-                    widget.config(bg="#F1F5F9", relief="flat", bd=0)
-                b.config(bg="#DBEAFE", relief="solid", bd=2)
-                selected_avatar.set(av)
-            
-            btn.config(command=on_click)
-            
-            col_idx += 1
-            if col_idx >= 8:
-                col_idx = 0
-                row_idx += 1
-
-        separator = tk.Frame(form, bg="#E2E8F0", height=1)
-        separator.pack(fill="x", pady=15)
-
-        tk.Label(form, text="Họ và tên:", bg="white", font=("Segoe UI", 11, "bold"),
-                 fg="#1E3A8A").pack(anchor="w", pady=(0, 5))
-        name_e = ttk.Entry(form, width=50, font=("Segoe UI", 11))
-        name_e.insert(0, current_name)
-        name_e.pack(pady=(0, 15), ipady=8, fill="x")
-
-        tk.Label(form, text="Email:", bg="white", font=("Segoe UI", 11, "bold"),
-                 fg="#1E3A8A").pack(anchor="w", pady=(0, 5))
-        email_e = ttk.Entry(form, width=50, font=("Segoe UI", 11))
-        email_e.insert(0, current_email)
-        email_e.pack(pady=(0, 20), ipady=8, fill="x")
-
-        def save_profile():
-            new_name = name_e.get().strip()
-            new_email = email_e.get().strip()
-            new_avatar = selected_avatar.get()
-            
-            if not new_name or not new_email:
-                messagebox.showwarning("Thiếu dữ liệu", "Vui lòng nhập đầy đủ thông tin!")
-                return
-            
-            if not messagebox.askyesno("Xác nhận lưu", 
-                                      f"Bạn có chắc muốn cập nhật thông tin?\n\n" +
-                                      f"Tên: {new_name}\n" +
-                                      f"Email: {new_email}\n" +
-                                      f"Avatar: {new_avatar}"):
-                return
-            
-            try:
-                conn = connect_db()
-                if conn:
-                    cursor = conn.cursor()
-                    cursor.execute("UPDATE USER SET name=%s, email=%s, account=%s WHERE user_ID=1", 
-                                 (new_name, new_email, new_avatar))
-                    conn.commit()
-                    conn.close()
-                    self.current_avatar = new_avatar
-                    messagebox.showinfo("Thành công", "Đã cập nhật thông tin!")
-                    win.destroy()
-                    self.show_profile()
-            except Error as e:
-                messagebox.showerror("Lỗi", f"Không thể cập nhật:\n{e}")
-
-        btn = tk.Button(form, text="💾 Lưu thay đổi", command=save_profile,
-                       font=("Segoe UI", 12, "bold"), bg="#10B981", fg="white",
-                       cursor="hand2", bd=0, relief="flat", padx=40, pady=12)
-        btn.pack(pady=(10, 0))
-        btn.bind("<Enter>", lambda e: btn.config(bg="#059669"))
-        btn.bind("<Leave>", lambda e: btn.config(bg="#10B981"))
-
-    def change_password(self):
-        win = tk.Toplevel(self.root)
-        win.title("🔒 Đổi mật khẩu")
-        win.geometry("500x450")
-        win.configure(bg="#E8F4F8")
-        win.resizable(False, False)
-
-        header = tk.Frame(win, bg="#6366F1", height=80)
-        header.pack(fill="x")
-        header.pack_propagate(False)
-        
-        tk.Label(header, text="🔒 Đổi mật khẩu",
-                 font=("Segoe UI", 18, "bold"), fg="white", bg="#6366F1").pack(pady=25)
-
-        form = tk.Frame(win, bg="white")
-        form.pack(fill="both", expand=True, padx=30, pady=20)
-
-        tk.Label(form, text="Mật khẩu hiện tại:", bg="white", font=("Segoe UI", 11, "bold"),
-                 fg="#1E3A8A").pack(anchor="w", pady=(15, 5))
-        old_pass = ttk.Entry(form, width=50, font=("Segoe UI", 11), show="●")
-        old_pass.pack(pady=(0, 15), ipady=8, fill="x")
-
-        tk.Label(form, text="Mật khẩu mới:", bg="white", font=("Segoe UI", 11, "bold"),
-                 fg="#1E3A8A").pack(anchor="w", pady=(0, 5))
-        new_pass = ttk.Entry(form, width=50, font=("Segoe UI", 11), show="●")
-        new_pass.pack(pady=(0, 15), ipady=8, fill="x")
-
-        tk.Label(form, text="Xác nhận mật khẩu mới:", bg="white", font=("Segoe UI", 11, "bold"),
-                 fg="#1E3A8A").pack(anchor="w", pady=(0, 5))
-        confirm_pass = ttk.Entry(form, width=50, font=("Segoe UI", 11), show="●")
-        confirm_pass.pack(pady=(0, 20), ipady=8, fill="x")
-
-        def save_password():
-            old_p = old_pass.get().strip()
-            new_p = new_pass.get().strip()
-            conf_p = confirm_pass.get().strip()
-            
-            if not old_p or not new_p or not conf_p:
-                messagebox.showwarning("Thiếu dữ liệu", "Vui lòng nhập đầy đủ thông tin!")
-                return
-            
-            if new_p != conf_p:
-                messagebox.showerror("Lỗi", "Mật khẩu mới không khớp!")
-                return
-            
-            if len(new_p) < 6:
-                messagebox.showerror("Lỗi", "Mật khẩu mới phải có ít nhất 6 ký tự!")
-                return
-            
-            if not messagebox.askyesno("Xác nhận đổi mật khẩu", 
-                                      "Bạn có chắc muốn đổi mật khẩu?\n\n" +
-                                      "Bạn sẽ cần sử dụng mật khẩu mới để đăng nhập lần sau."):
-                return
-            
-            try:
-                conn = connect_db()
-                if conn:
-                    cursor = conn.cursor()
-                    cursor.execute("SELECT password FROM USER WHERE user_ID=1")
-                    result = cursor.fetchone()
-                    
-                    if result and result[0] == old_p:
-                        cursor.execute("UPDATE USER SET password=%s WHERE user_ID=1", (new_p,))
-                        conn.commit()
-                        conn.close()
-                        messagebox.showinfo("Thành công", "Đã đổi mật khẩu thành công!")
-                        win.destroy()
-                    else:
-                        conn.close()
-                        messagebox.showerror("Lỗi", "Mật khẩu hiện tại không đúng!")
-            except Error as e:
-                messagebox.showerror("Lỗi", f"Không thể cập nhật:\n{e}")
-
-        btn = tk.Button(form, text="🔒 Đổi mật khẩu", command=save_password,
-                       font=("Segoe UI", 12, "bold"), bg="#6366F1", fg="white",
-                       cursor="hand2", bd=0, relief="flat", padx=40, pady=12)
-        btn.pack(pady=(10, 0))
-        btn.bind("<Enter>", lambda e: btn.config(bg="#4F46E5"))
-        btn.bind("<Leave>", lambda e: btn.config(bg="#6366F1"))
-
-    def open_settings(self):
-        win = tk.Toplevel(self.root)
-        win.title("⚙️ Cài đặt")
-        win.geometry("600x500")
-        win.configure(bg="#E8F4F8")
-        win.resizable(False, False)
-
-        header = tk.Frame(win, bg="#8B5CF6", height=80)
-        header.pack(fill="x")
-        header.pack_propagate(False)
-        
-        tk.Label(header, text="⚙️ Cài đặt ứng dụng",
-                 font=("Segoe UI", 18, "bold"), fg="white", bg="#8B5CF6").pack(pady=25)
-
-        content = tk.Frame(win, bg="white")
-        content.pack(fill="both", expand=True, padx=30, pady=20)
-
-        notif_frame = tk.LabelFrame(content, text="🔔 Thông báo", bg="white", fg="#1E3A8A",
-                                    font=("Segoe UI", 12, "bold"), padx=20, pady=15)
-        notif_frame.pack(fill="x", pady=(10, 15))
-
-        self.notif_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(notif_frame, text="Nhận thông báo học tập hàng ngày", 
-                      variable=self.notif_var, bg="white", font=("Segoe UI", 10),
-                      activebackground="white").pack(anchor="w", pady=5)
-        
-        self.reminder_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(notif_frame, text="Nhắc nhở khi chưa học trong ngày", 
-                      variable=self.reminder_var, bg="white", font=("Segoe UI", 10),
-                      activebackground="white").pack(anchor="w", pady=5)
-
-        lang_frame = tk.LabelFrame(content, text="🌐 Ngôn ngữ", bg="white", fg="#1E3A8A",
-                                   font=("Segoe UI", 12, "bold"), padx=20, pady=15)
-        lang_frame.pack(fill="x", pady=(0, 15))
-
-        tk.Label(lang_frame, text="Ngôn ngữ giao diện:", bg="white", 
-                font=("Segoe UI", 10)).pack(anchor="w", pady=(5, 5))
-        
-        lang_combo = ttk.Combobox(lang_frame, values=["Tiếng Việt", "English", "日本語", "中文"],
-                                 state="readonly", width=30, font=("Segoe UI", 10))
-        lang_combo.set("Tiếng Việt")
-        lang_combo.pack(anchor="w", pady=(0, 10), ipady=5)
-
-        data_frame = tk.LabelFrame(content, text="💾 Dữ liệu", bg="white", fg="#1E3A8A",
-                                   font=("Segoe UI", 12, "bold"), padx=20, pady=15)
-        data_frame.pack(fill="x", pady=(0, 15))
-
-        btn_backup = tk.Button(data_frame, text="📥 Sao lưu dữ liệu",
-                              font=("Segoe UI", 10, "bold"), bg="#3B82F6", fg="white",
-                              cursor="hand2", bd=0, relief="flat", padx=15, pady=8,
-                              command=lambda: messagebox.showinfo("Sao lưu", "Đã sao lưu dữ liệu thành công!"))
-        btn_backup.pack(side="left", padx=(0, 10))
-
-        btn_reset = tk.Button(data_frame, text="🔄 Đặt lại tiến độ",
-                             font=("Segoe UI", 10, "bold"), bg="#EF4444", fg="white",
-                             cursor="hand2", bd=0, relief="flat", padx=15, pady=8,
-                             command=lambda: self.reset_progress())
-        btn_reset.pack(side="left")
-
-        def save_settings():
-            if messagebox.askyesno("Xác nhận lưu", "Bạn có muốn lưu các thay đổi cài đặt?"):
-                messagebox.showinfo("Thành công", "Đã lưu cài đặt!")
-                win.destroy()
-
-        btn_save = tk.Button(content, text="💾 Lưu cài đặt", command=save_settings,
-                            font=("Segoe UI", 12, "bold"), bg="#8B5CF6", fg="white",
-                            cursor="hand2", bd=0, relief="flat", padx=40, pady=12)
-        btn_save.pack(pady=(20, 0))
-        btn_save.bind("<Enter>", lambda e: btn_save.config(bg="#7C3AED"))
-        btn_save.bind("<Leave>", lambda e: btn_save.config(bg="#8B5CF6"))
-
-    def reset_progress(self):
-        if messagebox.askyesno("Xác nhận", "Bạn có chắc muốn đặt lại toàn bộ tiến độ học tập?\nHành động này không thể hoàn tác!"):
-            messagebox.showinfo("Thành công", "Đã đặt lại tiến độ học tập!")
-
-    # ===========================
-    # 📘 TRANG TỪ VỰNG (GIỮ NGUYÊN TỪ CODE GỐC)
+    # 📘 TRANG TỪ VỰNG
     # ===========================
     def show_vocab(self):
         self.clear_main()
         BLEUVocab(self.main_frame)
+
+    # ===========================
+    # 🎮 TRANG GAME MATCHING
+    # ===========================
+    def show_game(self):
+        self.clear_main()
+        MatchingGame(self.main_frame)
+
 
 # ===============================
 # 📖 MODULE QUẢN LÝ TỪ VỰNG
@@ -812,7 +545,7 @@ class BLEUVocab:
         header = tk.Frame(container, bg="#E8F4F8")
         header.pack(fill="x", pady=(0, 20))
         
-        tk.Label(header, text="📚 Quản lý từ vựng", font=("Segoe UI", 28, "bold"),
+        tk.Label(header, text="📚 Từ vựng của tôi", font=("Segoe UI", 28, "bold"),
                  fg="#1E3A8A", bg="#E8F4F8").pack(side="left")
 
         # Search Panel
@@ -831,7 +564,7 @@ class BLEUVocab:
         
         type_combo = ttk.Combobox(type_frame, textvariable=self.search_type_var,
                                  state="readonly", width=15, font=("Segoe UI", 10))
-        type_combo['values'] = ["Tất cả", "ID", "Từ tiếng Anh", "Nghĩa tiếng Việt"]
+        type_combo['values'] = ["Tất cả", "ID", "Từ tiếng Anh", "Nghĩa tiếng Việt", "Trạng thái", "Độ khó"]
         type_combo.set("Tất cả")
         type_combo.pack(side=tk.LEFT, ipady=5)
 
@@ -855,14 +588,14 @@ class BLEUVocab:
         table_container.pack(fill=tk.BOTH, expand=True)
         table_container.configure(highlightbackground="#CBD5E1", highlightthickness=1)
 
-        columns = ("ID", "English", "Vietnamese", "Difficulty")
+        columns = ("ID", "English", "Vietnamese", "Status", "Difficulty")
         self.tree = ttk.Treeview(table_container, columns=columns, show="headings", height=20)
         
         for col, text, w in zip(columns,
-                                ["ID", "Từ tiếng Anh", "Nghĩa tiếng Việt", "Độ khó"],
-                                [80, 300, 400, 150]):
+                                ["ID", "Từ tiếng Anh", "Nghĩa tiếng Việt", "Trạng thái", "Độ khó"],
+                                [80, 280, 350, 140, 140]):
             self.tree.heading(col, text=text)
-            self.tree.column(col, width=w, anchor="center" if col in ["ID", "Difficulty"] else "w")
+            self.tree.column(col, width=w, anchor="center" if col in ["ID", "Status", "Difficulty"] else "w")
 
         vsb = ttk.Scrollbar(table_container, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscroll=vsb.set)
@@ -896,7 +629,11 @@ class BLEUVocab:
             if not conn:
                 return
             cursor = conn.cursor()
-            cursor.execute("SELECT word_ID, word, meaning, difficulty FROM Vocab ORDER BY word_ID ASC")
+            cursor.execute("""
+                SELECT word_id, word, word_meaning, word_status, word_difficulty 
+                FROM Words 
+                ORDER BY word_id ASC
+            """)
             rows = cursor.fetchall()
             conn.close()
             self.update_table(rows)
@@ -906,7 +643,7 @@ class BLEUVocab:
     def update_table(self, rows):
         self.tree.delete(*self.tree.get_children())
         for r in rows:
-            self.tree.insert("", "end", values=(r[0], r[1], r[2], r[3]))
+            self.tree.insert("", "end", values=(r[0], r[1], r[2], r[3] or "N/A", r[4] or "N/A"))
 
     def search_word(self):
         key = self.search_var.get().strip()
@@ -916,7 +653,9 @@ class BLEUVocab:
             "Tất cả": "all",
             "ID": "id",
             "Từ tiếng Anh": "word",
-            "Nghĩa tiếng Việt": "meaning"
+            "Nghĩa tiếng Việt": "meaning",
+            "Trạng thái": "status",
+            "Độ khó": "difficulty"
         }
         search_type = type_mapping.get(search_type, "all")
         
@@ -934,14 +673,42 @@ class BLEUVocab:
                 if not key.isdigit():
                     messagebox.showwarning("Lỗi tìm kiếm", "ID phải là số nguyên!")
                     return
-                cursor.execute("SELECT word_ID, word, meaning, difficulty FROM Vocab WHERE word_ID = %s", (int(key),))
+                cursor.execute("""
+                    SELECT word_id, word, word_meaning, word_status, word_difficulty 
+                    FROM Words 
+                    WHERE word_id = %s
+                """, (int(key),))
             elif search_type == "word":
-                cursor.execute("SELECT word_ID, word, meaning, difficulty FROM Vocab WHERE word LIKE %s", (f"%{key}%",))
+                cursor.execute("""
+                    SELECT word_id, word, word_meaning, word_status, word_difficulty 
+                    FROM Words 
+                    WHERE word LIKE %s
+                """, (f"%{key}%",))
             elif search_type == "meaning":
-                cursor.execute("SELECT word_ID, word, meaning, difficulty FROM Vocab WHERE meaning LIKE %s", (f"%{key}%",))
+                cursor.execute("""
+                    SELECT word_id, word, word_meaning, word_status, word_difficulty 
+                    FROM Words 
+                    WHERE word_meaning LIKE %s
+                """, (f"%{key}%",))
+            elif search_type == "status":
+                cursor.execute("""
+                    SELECT word_id, word, word_meaning, word_status, word_difficulty 
+                    FROM Words 
+                    WHERE word_status LIKE %s
+                """, (f"%{key}%",))
+            elif search_type == "difficulty":
+                cursor.execute("""
+                    SELECT word_id, word, word_meaning, word_status, word_difficulty 
+                    FROM Words 
+                    WHERE word_difficulty LIKE %s
+                """, (f"%{key}%",))
             else:
-                cursor.execute("SELECT word_ID, word, meaning, difficulty FROM Vocab WHERE word_ID LIKE %s OR word LIKE %s OR meaning LIKE %s",
-                             (f"%{key}%", f"%{key}%", f"%{key}%"))
+                cursor.execute("""
+                    SELECT word_id, word, word_meaning, word_status, word_difficulty 
+                    FROM Words 
+                    WHERE word_id LIKE %s OR word LIKE %s OR word_meaning LIKE %s 
+                       OR word_status LIKE %s OR word_difficulty LIKE %s
+                """, (f"%{key}%", f"%{key}%", f"%{key}%", f"%{key}%", f"%{key}%"))
             
             rows = cursor.fetchall()
             conn.close()
@@ -952,6 +719,316 @@ class BLEUVocab:
             self.update_table(rows)
         except Error as e:
             messagebox.showerror("Lỗi Database", f"Lỗi khi tìm kiếm:\n{e}")
+
+
+# ===============================
+# 🎮 MODULE GAME MATCHING
+# ===============================
+class MatchingGame:
+    def __init__(self, parent):
+        self.parent = parent
+        self.words_data = []
+        self.selected_english = None
+        self.selected_vietnamese = None
+        self.matched_pairs = []
+        self.score = 0
+        self.total_pairs = 4
+        self.english_buttons = []
+        self.vietnamese_buttons = []
+        
+        # Main container
+        container = tk.Frame(parent, bg="#F0F4F8")
+        container.pack(fill="both", expand=True)
+        
+        # Header
+        header = tk.Frame(container, bg="#6366F1", height=100)
+        header.pack(fill="x")
+        header.pack_propagate(False)
+        
+        header_content = tk.Frame(header, bg="#6366F1")
+        header_content.pack(expand=True)
+        
+        tk.Label(header_content, text="🎮 GAME MATCHING", 
+                font=("Segoe UI", 32, "bold"), fg="white", bg="#6366F1").pack(pady=(10, 5))
+        tk.Label(header_content, text="Ghép từ tiếng Anh với nghĩa tiếng Việt tương ứng", 
+                font=("Segoe UI", 13), fg="#E0E7FF", bg="#6366F1").pack()
+        
+        # Score panel
+        score_panel = tk.Frame(container, bg="white", height=80)
+        score_panel.pack(fill="x", padx=40, pady=(20, 10))
+        score_panel.pack_propagate(False)
+        
+        score_content = tk.Frame(score_panel, bg="white")
+        score_content.pack(expand=True)
+        
+        self.score_label = tk.Label(score_content, text=f"🏆 Điểm: {self.score}/{self.total_pairs}", 
+                                    font=("Segoe UI", 22, "bold"), fg="#6366F1", bg="white")
+        self.score_label.pack(side="left", padx=30)
+        
+        self.status_label = tk.Label(score_content, text="Hãy chọn một từ tiếng Anh và một nghĩa tiếng Việt!", 
+                                     font=("Segoe UI", 14), fg="#64748B", bg="white")
+        self.status_label.pack(side="left", padx=20)
+        
+        # Game area
+        game_area = tk.Frame(container, bg="#F0F4F8")
+        game_area.pack(fill="both", expand=True, padx=40, pady=20)
+        
+        # Left column - English words
+        left_frame = tk.Frame(game_area, bg="#F0F4F8")
+        left_frame.pack(side="left", fill="both", expand=True, padx=(0, 20))
+        
+        tk.Label(left_frame, text="📘 Từ tiếng Anh", font=("Segoe UI", 18, "bold"),
+                fg="#1E3A8A", bg="#F0F4F8").pack(pady=(0, 20))
+        
+        self.english_frame = tk.Frame(left_frame, bg="#F0F4F8")
+        self.english_frame.pack(fill="both", expand=True)
+        
+        # Right column - Vietnamese meanings
+        right_frame = tk.Frame(game_area, bg="#F0F4F8")
+        right_frame.pack(side="right", fill="both", expand=True, padx=(20, 0))
+        
+        tk.Label(right_frame, text="📗 Nghĩa tiếng Việt", font=("Segoe UI", 18, "bold"),
+                fg="#1E3A8A", bg="#F0F4F8").pack(pady=(0, 20))
+        
+        self.vietnamese_frame = tk.Frame(right_frame, bg="#F0F4F8")
+        self.vietnamese_frame.pack(fill="both", expand=True)
+        
+        # Control buttons
+        control_panel = tk.Frame(container, bg="#F0F4F8", height=80)
+        control_panel.pack(fill="x", padx=40, pady=(0, 30))
+        control_panel.pack_propagate(False)
+        
+        btn_frame = tk.Frame(control_panel, bg="#F0F4F8")
+        btn_frame.pack(expand=True)
+        
+        self.btn_new_game = tk.Button(btn_frame, text="🔄 Chơi lại", 
+                                      font=("Segoe UI", 14, "bold"),
+                                      bg="#10B981", fg="white", cursor="hand2",
+                                      bd=0, relief="flat", padx=40, pady=15,
+                                      command=self.new_game)
+        self.btn_new_game.pack(side="left", padx=10)
+        
+        self.btn_new_game.bind("<Enter>", lambda e: self.btn_new_game.config(bg="#059669"))
+        self.btn_new_game.bind("<Leave>", lambda e: self.btn_new_game.config(bg="#10B981"))
+        
+        # Load game
+        self.load_game()
+    
+    def load_game(self):
+        """Load 4 random words from database"""
+        try:
+            conn = connect_db()
+            if not conn:
+                messagebox.showerror("Lỗi", "Không thể kết nối database!")
+                return
+            
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT word, word_meaning 
+                FROM Words 
+                WHERE word IS NOT NULL AND word_meaning IS NOT NULL
+                ORDER BY RAND() 
+                LIMIT 4
+            """)
+            self.words_data = cursor.fetchall()
+            conn.close()
+            
+            if len(self.words_data) < 4:
+                messagebox.showwarning("Cảnh báo", "Cần có ít nhất 4 từ vựng trong database để chơi game!")
+                return
+            
+            self.setup_game()
+            
+        except Error as e:
+            messagebox.showerror("Lỗi Database", f"Không thể tải dữ liệu:\n{e}")
+    
+    def setup_game(self):
+        """Setup game board with words"""
+        import random
+        
+        # Clear previous game
+        for widget in self.english_frame.winfo_children():
+            widget.destroy()
+        for widget in self.vietnamese_frame.winfo_children():
+            widget.destroy()
+        
+        self.english_buttons = []
+        self.vietnamese_buttons = []
+        self.matched_pairs = []
+        self.selected_english = None
+        self.selected_vietnamese = None
+        self.score = 0
+        
+        # Extract words and meanings
+        english_words = [w[0] for w in self.words_data]
+        vietnamese_meanings = [w[1] for w in self.words_data]
+        
+        # Shuffle Vietnamese meanings
+        random.shuffle(vietnamese_meanings)
+        
+        # Create English buttons
+        for i, word in enumerate(english_words):
+            btn = tk.Button(
+                self.english_frame, text=word,
+                font=("Segoe UI", 16, "bold"),
+                bg="#3B82F6", fg="white",
+                cursor="hand2", relief="flat", bd=0,
+                wraplength=300, justify="center",
+                padx=20, pady=20
+            )
+            btn.pack(fill="x", pady=10)
+            btn.config(command=lambda b=btn, w=word: self.select_english(b, w))
+            self.english_buttons.append((btn, word))
+            
+            btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#2563EB") if b.cget("state") != "disabled" else None)
+            btn.bind("<Leave>", lambda e, b=btn: b.config(bg="#3B82F6") if b.cget("state") != "disabled" else None)
+        
+        # Create Vietnamese buttons
+        for i, meaning in enumerate(vietnamese_meanings):
+            btn = tk.Button(
+                self.vietnamese_frame, text=meaning,
+                font=("Segoe UI", 16, "bold"),
+                bg="#10B981", fg="white",
+                cursor="hand2", relief="flat", bd=0,
+                wraplength=300, justify="center",
+                padx=20, pady=20
+            )
+            btn.pack(fill="x", pady=10)
+            btn.config(command=lambda b=btn, m=meaning: self.select_vietnamese(b, m))
+            self.vietnamese_buttons.append((btn, meaning))
+            
+            btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#059669") if b.cget("state") != "disabled" else None)
+            btn.bind("<Leave>", lambda e, b=btn: b.config(bg="#10B981") if b.cget("state") != "disabled" else None)
+        
+        self.update_status("Hãy chọn một từ tiếng Anh và một nghĩa tiếng Việt!")
+        self.update_score()
+    
+    def select_english(self, button, word):
+        """Handle English word selection"""
+        # Deselect previous English selection
+        if self.selected_english and self.selected_english[0] != button:
+            self.selected_english[0].config(bg="#3B82F6", relief="flat")
+        
+        # Select current button
+        self.selected_english = (button, word)
+        button.config(bg="#F59E0B", relief="solid")
+        
+        self.update_status(f"Đã chọn: '{word}' - Hãy chọn nghĩa tiếng Việt!")
+        
+        # Check if both selected
+        if self.selected_vietnamese:
+            self.check_match()
+    
+    def select_vietnamese(self, button, meaning):
+        """Handle Vietnamese meaning selection"""
+        # Deselect previous Vietnamese selection
+        if self.selected_vietnamese and self.selected_vietnamese[0] != button:
+            self.selected_vietnamese[0].config(bg="#10B981", relief="flat")
+        
+        # Select current button
+        self.selected_vietnamese = (button, meaning)
+        button.config(bg="#F59E0B", relief="solid")
+        
+        self.update_status(f"Đã chọn nghĩa: '{meaning}' - Hãy chọn từ tiếng Anh!")
+        
+        # Check if both selected
+        if self.selected_english:
+            self.check_match()
+    
+    def check_match(self):
+        """Check if selected pair is correct"""
+        english_word = self.selected_english[1]
+        vietnamese_meaning = self.selected_vietnamese[1]
+        
+        # Find correct meaning for the English word
+        correct_meaning = None
+        for word, meaning in self.words_data:
+            if word == english_word:
+                correct_meaning = meaning
+                break
+        
+        if vietnamese_meaning == correct_meaning:
+            # Correct match!
+            self.score += 1
+            self.matched_pairs.append((english_word, vietnamese_meaning))
+            
+            # Update buttons to show success
+            self.selected_english[0].config(
+                bg="#10B981", state="disabled", 
+                relief="solid", cursor="arrow"
+            )
+            self.selected_vietnamese[0].config(
+                bg="#10B981", state="disabled",
+                relief="solid", cursor="arrow"
+            )
+            
+            self.update_status(f"✅ Chính xác! '{english_word}' = '{vietnamese_meaning}'")
+            self.update_score()
+            
+            # Check if game completed
+            if self.score >= self.total_pairs:
+                self.parent.after(1000, self.game_completed)
+        else:
+            # Wrong match
+            self.update_status(f"❌ Sai rồi! '{english_word}' ≠ '{vietnamese_meaning}'. Thử lại!")
+            
+            # Flash red and reset
+            self.selected_english[0].config(bg="#EF4444")
+            self.selected_vietnamese[0].config(bg="#EF4444")
+            
+            self.parent.after(800, self.reset_selection)
+        
+        self.selected_english = None
+        self.selected_vietnamese = None
+    
+    def reset_selection(self):
+        """Reset button colors after wrong match"""
+        for btn, word in self.english_buttons:
+            if btn.cget("state") != "disabled":
+                btn.config(bg="#3B82F6", relief="flat")
+        
+        for btn, meaning in self.vietnamese_buttons:
+            if btn.cget("state") != "disabled":
+                btn.config(bg="#10B981", relief="flat")
+        
+        self.update_status("Hãy thử lại! Chọn một từ tiếng Anh và nghĩa tiếng Việt!")
+    
+    def update_score(self):
+        """Update score display"""
+        self.score_label.config(text=f"🏆 Điểm: {self.score}/{self.total_pairs}")
+    
+    def update_status(self, message):
+        """Update status message"""
+        self.status_label.config(text=message)
+    
+    def game_completed(self):
+        """Handle game completion"""
+        # Update game result to database
+        try:
+            conn = connect_db()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO Games (game_user_id, correct_word_quantity) 
+                    VALUES (1, %s)
+                """, (self.score,))
+                conn.commit()
+                conn.close()
+        except:
+            pass
+        
+        messagebox.showinfo(
+            "🎉 Chúc mừng!", 
+            f"Bạn đã hoàn thành game!\n\n" +
+            f"Điểm số: {self.score}/{self.total_pairs}\n\n" +
+            f"Bạn có muốn chơi lại không?"
+        )
+        self.new_game()
+    
+    def new_game(self):
+        """Start a new game"""
+        self.load_game()
+
 
 # ===============================
 # 🚀 CHẠY APP

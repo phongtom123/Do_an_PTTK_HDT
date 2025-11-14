@@ -1,233 +1,170 @@
 ﻿import sys, os
 
-# --- BẮT ĐẦU SỬA LỖI IMPORT ---
-# Thêm thư mục 'project' (để import 'controller' thành công)
+# --- (Phần code sửa sys.path của bạn giữ nguyên) ---
 interfaces_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.dirname(interfaces_dir)
 sys.path.insert(0, project_dir) 
-
-# Thêm thư mục GỐC (để import 'db' thành công)
 root_dir = os.path.dirname(project_dir)
 sys.path.insert(0, root_dir)
-# --- KẾT THÚC SỬA LỖI IMPORT ---
-
 
 import tkinter as tk
+from tkinter import ttk
 
-# --- import các module chính ---
-from main_content import create_main_frame, show_message
+# --- IMPORT CÁC MODULE GIAO DIỆN ---
 from sidebar_left import create_sidebar_left
-from sidebar_right import create_sidebar_right
 from controller.unit_controller import get_all_units
-from reading_content import show_reading_practice
-from listening_content import show_listening_practice
-from game import create_game_screen
-from history import create_history_screen
-from ranking import Ranking
 
-# --- Khởi tạo ---
-root = tk.Tk()
-root.title("BulaBuluuuu")
-root.geometry("1100x700")
-root.configure(bg="#FFFFFF")
+# --- IMPORT CÁC TRANG (PAGE CLASSES) ---
+from game import GamePage
+from history import HistoryPage
+from ranking import RankingPage # Đổi tên từ 'Ranking' để rõ ràng
+from db.db import db # Import class 'db'
 
-main_frame = create_main_frame(root)
-sidebar_right_ref = [None]
+# ==========================================================
+# === LỚP (CLASS) TRANG DANH SÁCH BÀI HỌC (THAY THẾ show_lesson_list) ===
+# ==========================================================
+class LessonListPage(tk.Frame):
+    """Trang hiển thị danh sách tất cả các Unit."""
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
 
-def recreate_sidebar_right():
-    sidebar = create_sidebar_right(root)
-    sidebar_right_ref[0] = sidebar
-    return sidebar
+        # --- Header ---
+        self.create_header(self, part_text="Unit", title_text="Bài mới mỗi ngày")
 
-recreate_sidebar_right()
-in_learning_mode = [False]
+        # --- Lấy dữ liệu Units ---
+        units = get_all_units()
 
-# --- Biến nhớ chế độ hiện tại ---
-current_mode = [None]   # sẽ là "Reading" hoặc "Listening"
+        container_frame = tk.Frame(self, bg="#f9f9f9")
+        container_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-# --- Reset sidebar phải ---
-def reset_sidebar():
-    if in_learning_mode[0]:
-        if sidebar_right_ref[0] is not None:
-            try:
-                sidebar_right_ref[0].pack_forget()
-                sidebar_right_ref[0].destroy()
-            except Exception:
-                pass
-            sidebar_right_ref[0] = None
-        root.update_idletasks()
-        recreate_sidebar_right()
-        in_learning_mode[0] = False
+        canvas = tk.Canvas(container_frame, bg="#f9f9f9", highlightthickness=0)
+        scrollbar = tk.Scrollbar(container_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg="#f9f9f9")
+        window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
 
-# --- Header ---
-def create_header(root, part_text="Phần 9", title_text="Bài mới mỗi ngày",
-                  color="#1da9fe", back_callback=None):
-    wrapper = tk.Frame(root, bg="#f9f9f9")
-    wrapper.pack(fill="x", padx=20, pady=15)
+        def on_frame_configure(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        scrollable_frame.bind("<Configure>", on_frame_configure)
 
-    header = tk.Frame(wrapper, bg=color, height=80)
-    header.pack(fill="x")
-    header.pack_propagate(False)
+        def on_canvas_configure(event):
+            canvas.itemconfig(window, width=event.width)
+        canvas.bind("<Configure>", on_canvas_configure)
 
-    back_label = tk.Label(header, text=f"← {part_text}", bg=color, fg="white",
-                          font=("Arial", 10, "bold"), anchor="w", cursor="hand2")
-    back_label.pack(anchor="w", padx=20, pady=(10, 0))
-    if back_callback:
-        back_label.bind("<Button-1>", lambda e: back_callback())
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
 
-    tk.Label(header, text=title_text, bg=color, fg="white",
-             font=("Arial", 14, "bold"), anchor="w").pack(anchor="w", padx=20, pady=(2, 10))
+        for unit in units:
+            unit_name = unit[1] if isinstance(unit, (tuple, list)) else str(unit)
+            outer = tk.Frame(scrollable_frame, bg="white", highlightbackground="#e0e0e0", highlightthickness=1)
+            outer.pack(pady=10, fill="x")
+            inner = tk.Frame(outer, bg="white")
+            inner.pack(fill="x", padx=20, pady=15)
+            left = tk.Frame(inner, bg="white")
+            left.pack(side="left", fill="x", expand=True)
+            tk.Label(left, text=unit_name, font=("Arial", 13, "bold"), bg="white", fg="#333").pack(anchor="w")
+            tk.Label(left, text="✅ HOÀN THÀNH", font=("Arial", 11, "bold"),
+                     bg="white", fg="#00AA00").pack(anchor="w", pady=(5, 0))
 
-    return header
+            tk.Button(inner, text="ÔN TẬP", font=("Arial", 11, "bold"),
+                      fg="#1da9fe", bg="white", bd=1, relief="solid",
+                      activebackground="#ecf5ff", cursor="hand2",
+                      width=10, height=1,
+                      command=lambda u=unit_name: self.controller.show_lesson_details(u)
+            ).pack(side="right")
 
-# --- Danh sách unit ---
-def show_lesson_list():
-    reset_sidebar()
-    for w in main_frame.winfo_children():
-        w.destroy()
+    def create_header(self, parent, part_text, title_text, color="#1da9fe", back_callback=None):
+        wrapper = tk.Frame(parent, bg="#f9f9f9")
+        wrapper.pack(fill="x", padx=20, pady=15)
+        header = tk.Frame(wrapper, bg=color, height=80)
+        header.pack(fill="x")
+        header.pack_propagate(False)
+        back_label = tk.Label(header, text=f"← {part_text}", bg=color, fg="white",
+                              font=("Arial", 10, "bold"), anchor="w", cursor="hand2")
+        back_label.pack(anchor="w", padx=20, pady=(10, 0))
+        if back_callback:
+            back_label.bind("<Button-1>", lambda e: back_callback())
+        tk.Label(header, text=title_text, bg=color, fg="white",
+                 font=("Arial", 14, "bold"), anchor="w").pack(anchor="w", padx=20, pady=(2, 10))
+        return header
 
-    create_header(main_frame, part_text="Unit", title_text="Bài mới mỗi ngày")
+# ==========================================================
+# ===          LỚP (CLASS) ỨNG DỤNG CHÍNH (APP)          ===
+# ==========================================================
 
-    units = get_all_units()
+class App(tk.Tk):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    container_frame = tk.Frame(main_frame, bg="#f9f9f9")
-    container_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        self.title("BulaBuluuuu")
+        self.geometry("1100x700")
+        self.configure(bg="#FFFFFF")
 
-    canvas = tk.Canvas(container_frame, bg="#f9f9f9", highlightthickness=0)
-    scrollbar = tk.Scrollbar(container_frame, orient="vertical", command=canvas.yview)
-    scrollable_frame = tk.Frame(canvas, bg="#f9f9f9")
-    window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-
-    def on_frame_configure(event):
-        canvas.configure(scrollregion=canvas.bbox("all"))
-    scrollable_frame.bind("<Configure>", on_frame_configure)
-
-    def on_canvas_configure(event):
-        canvas.itemconfig(window, width=event.width)
-    canvas.bind("<Configure>", on_canvas_configure)
-
-    canvas.configure(yscrollcommand=scrollbar.set)
-    canvas.pack(side="left", fill="both", expand=True)
-    scrollbar.pack(side="right", fill="y")
-
-    for unit in units:
-        unit_name = unit[1] if isinstance(unit, (tuple, list)) else str(unit)
-
-        outer = tk.Frame(scrollable_frame, bg="white", highlightbackground="#e0e0e0", highlightthickness=1)
-        outer.pack(pady=10, fill="x")
-
-        inner = tk.Frame(outer, bg="white")
-        inner.pack(fill="x", padx=20, pady=15)
-
-        left = tk.Frame(inner, bg="white")
-        left.pack(side="left", fill="x", expand=True)
-
-        tk.Label(left, text=unit_name, font=("Arial", 13, "bold"), bg="white", fg="#333").pack(anchor="w")
-        tk.Label(left, text="✅ HOÀN THÀNH", font=("Arial", 11, "bold"),
-                 bg="white", fg="#00AA00").pack(anchor="w", pady=(5, 0))
-
-        def open_unit_lessons(u):
-            lessons = [f"Lesson {i}" for i in range(1, 6)]
-            # truyền luôn chế độ hiện tại
-            show_in_main(u, lessons, current_mode[0])
-
-        tk.Button(inner, text="ÔN TẬP", font=("Arial", 11, "bold"),
-                  fg="#1da9fe", bg="white", bd=1, relief="solid",
-                  activebackground="#ecf5ff", cursor="hand2",
-                  width=10, height=1,
-                  command=lambda u=unit_name: open_unit_lessons(u)).pack(side="right")
-
-# --- Hiển thị danh sách lesson ---
-def show_in_main(title, contents, mode=None):
-    reset_sidebar()
-
-# === 2 if này của Game ===
-    if title == "Game": # Nếu nút "Chơi Game" được bấm
-        current_mode[0] = "Game"
-        create_game_screen(main_frame)
-        return # Dừng hàm tại đây
-
-    if title == "lịch sử": # Nếu nút "Lịch sử" được bấm
-        current_mode[0] = "lịch sử"
-        create_history_screen(main_frame)
-        return # Dừng hàm tại đây
-
-# === if này của Ranking ===
-    if title == "Xếp hạng":
-        current_mode[0] = "Xếp hạng"
+        self.db_class = db
+        self.current_user_id = 1 # Tạm thời hard-code user_id
+        self.current_mode = None
+        self.in_learning_mode = False
         
-        # 1. Xóa nội dung cũ trên main_frame
-        for w in main_frame.winfo_children():
-            w.destroy()
-            
-        # 2. Tạo instance của class Ranking và pack vào main_frame
-        #    Class Ranking(tk.Frame) sẽ tự vẽ nội dung của nó
-        ranking_page = Ranking(main_frame)
-        ranking_page.pack(fill="both", expand=True)
-        return # Dừng hàm tại đây
+        # --- Tạo Sidebar ---
+        # **QUAN TRỌNG: Truyền 'self' (chính là App object) làm controller**
+        create_sidebar_left(self, self)
 
-    # Nếu là nhấn từ sidebar thì ghi lại chế độ
-    if title in ("Reading", "Listening"):
-        current_mode[0] = title
+        # --- Tạo Container Frame ---
+        self.container = tk.Frame(self)
+        self.container.pack(side="left", fill="both", expand=True)
+        self.container.grid_rowconfigure(0, weight=1)
+        self.container.grid_columnconfigure(0, weight=1)
 
-    # Nếu là quay lại
-    if title == "__BACK__":
-        show_lesson_list()
-        return
+        # --- Chuẩn bị tất cả các trang ---
+        self.frames = {}
+        for F in (LessonListPage, GamePage, HistoryPage, RankingPage):
+            page_name = F.__name__
+            frame = F(parent=self.container, controller=self)
+            self.frames[page_name] = frame
+            frame.grid(row=0, column=0, sticky="nsew")
 
-    for w in main_frame.winfo_children():
-        w.destroy()
+        self.show_frame("LessonListPage")
 
-    create_header(main_frame, part_text="Units",
-                  title_text=f"Nội dung {title}", back_callback=show_lesson_list)
+    def show_frame(self, page_name):
+        """Hiển thị một frame (trang) dựa theo tên Class của nó."""
+        frame = self.frames[page_name]
+        if hasattr(frame, "refresh"):
+            frame.refresh()
+        frame.tkraise()
 
-    lessons = []
-    for item in contents:
-        lesson = {"title": str(item), "status": "Chưa học"}
+    def show_page_from_sidebar(self, title, contents=None, mode=None):
+        """
+        Hàm này được 'sidebar_left' gọi.
+        'self' ở đây là 'App', nó CÓ thuộc tính 'show_page_from_sidebar'.
+        """
+        print(f"Sidebar gọi: {title}")
+        if title == "Game":
+            self.show_frame("GamePage")
+        elif title == "lịch sử":
+            self.show_frame("HistoryPage")
+        elif title == "Xếp hạng":
+            self.show_frame("RankingPage")
+        elif title == "Reading":
+            # (Bạn sẽ cần tạo 1 trang ReadingPage và gọi nó ở đây)
+            # self.current_mode = "Reading"
+            # self.show_frame("ReadingListPage")
+            print("Chưa lập trình trang Reading")
+            pass
+        elif title == "Listening":
+            print("Chưa lập trình trang Listening")
+            pass
+        elif title == "__BACK__":
+            self.show_frame("LessonListPage")
+        else:
+            self.show_frame("LessonListPage")
 
-        def lesson_callback(x=item):
-            # đóng sidebar_right
-            if sidebar_right_ref[0] is not None:
-                sidebar_right_ref[0].pack_forget()
-                sidebar_right_ref[0].destroy()
-                sidebar_right_ref[0] = None
-
-                        # Nếu trước đó chọn Listening → mở listening_content
-            if current_mode[0] == "Listening":
-                show_listening_practice(root, main_frame, sidebar_right_ref,
-                                        recreate_sidebar_right, show_in_main, in_learning_mode)
-            else:
-                # Mặc định luôn mở Reading
-                show_reading_practice(root, main_frame, sidebar_right_ref,
-                                      recreate_sidebar_right, show_in_main, in_learning_mode)
+    def show_lesson_details(self, unit_name):
+        """(Chưa lập trình)"""
+        print(f"Mở chi tiết cho: {unit_name}")
 
 
-        lesson["button_cmd"] = lesson_callback
-        lessons.append(lesson)
-
-    container = tk.Frame(main_frame, bg="#f9f9f9")
-    container.pack(fill="both", expand=True, padx=20, pady=10)
-
-    for lesson in lessons:
-        outer = tk.Frame(container, bg="white", highlightbackground="#e0e0e0", highlightthickness=1)
-        outer.pack(pady=10, fill="x")
-        inner = tk.Frame(outer, bg="white")
-        inner.pack(fill="x", padx=20, pady=15)
-        left = tk.Frame(inner, bg="white")
-        left.pack(side="left", fill="x", expand=True)
-        tk.Label(left, text=lesson["title"], font=("Arial", 13, "bold"),
-                 bg="white", fg="#333").pack(anchor="w")
-        tk.Label(left, text=f"✅ {lesson['status']}",
-                 font=("Arial", 11, "bold"), bg="white", fg="#00AA00").pack(anchor="w", pady=(5, 0))
-        tk.Button(inner, text="HỌC", font=("Arial", 11, "bold"),
-                  fg="#1da9fe", bg="white", bd=1, relief="solid",
-                  activebackground="#ecf5ff", cursor="hand2",
-                  width=10, height=1,
-                  command=lesson["button_cmd"]).pack(side="right")
-
-# --- Giao diện chính ---
-create_sidebar_left(root, show_in_main)
-main_frame.pack(side="left", fill="both", expand=True)
-show_lesson_list()
-
-root.mainloop()
+# --- Chạy ứng dụng ---
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()

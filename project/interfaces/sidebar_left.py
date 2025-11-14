@@ -2,16 +2,16 @@
 import sys, os
 from PIL import Image, ImageTk
 
-from ranking import Ranking 
+# (Import Ranking và get_all_units không còn cần thiết ở đây,
+# vì main.py (controller) sẽ xử lý việc đó)
+# from ranking import Ranking 
+# from controller.unit_controller import get_all_units
 
-# thêm đường dẫn cha để import controller
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from controller.unit_controller import get_all_units
 from utils.make_button import make_button
 
-
-def create_sidebar_left(root, show_in_main):
+# --- THAY ĐỔI 1: Sửa tham số đầu vào ---
+# Bỏ 'show_in_main', thay bằng 'controller' (chính là class App)
+def create_sidebar_left(root, controller): 
     # === Tạo container chứa sidebar + toggle ===
     container = tk.Frame(root, bg="#FFFFFF")
     container.pack(side="left", fill="y")
@@ -27,10 +27,9 @@ def create_sidebar_left(root, show_in_main):
     sidebar_left.pack(side="left", fill="y")
     sidebar_left.pack_propagate(False)
 
-    # === Khung toggle (nút đóng/mở luôn nằm bên phải sidebar) ===
+    # === Khung toggle (Giữ nguyên) ===
     toggle_frame = tk.Frame(container, bg="#FFFFFF", width=15)
     toggle_frame.pack(side="left", fill="y")
-
     toggle_icon = tk.Label(
         toggle_frame,
         text="<",
@@ -39,10 +38,9 @@ def create_sidebar_left(root, show_in_main):
         cursor="hand2"
     )
     toggle_icon.pack(padx=5, pady=10)
-
     collapsed = [False]
 
-    # === Load icon ===
+    # === Load icon (Giữ nguyên) ===
     icons = {}
     def load(name, path, size):
         try:
@@ -65,13 +63,14 @@ def create_sidebar_left(root, show_in_main):
     load("history", "./photos/history.png", (25,25))
     sidebar_left._icons = icons
 
-    # === Logo ===
+    # === Logo (Giữ nguyên) ===
     logo_frame = tk.Frame(sidebar_left, bg="#FFFFFF", height=120)
     logo_frame.pack(fill="x")
     logo_frame.pack_propagate(False)
 
     def go_home():
-        show_in_main("__BACK__", [])
+        # --- THAY ĐỔI 2: Gọi controller ---
+        controller.show_page_from_sidebar("__BACK__", [])
 
     try:
         img2 = Image.open("./photos/2.png").resize((150,130))
@@ -89,18 +88,18 @@ def create_sidebar_left(root, show_in_main):
             command=go_home
         ).pack(pady=20)
 
-    # === MỤC HỌC ===
+    # === MỤC HỌC (Giữ nguyên logic toggle) ===
     btn_courses = make_button(sidebar_left, "Học", icons["learn"])
     btn_courses.pack(fill="x", pady=5)
 
     btn_vocab = make_button(
         sidebar_left, "Từ vựng", icons["vocab"],
-        cmd=lambda: show_in_main("Từ vựng", ["Từ mới hôm nay","Ôn tập tuần"]), padx=40
+        # --- THAY ĐỔI 3: Gọi controller ---
+        cmd=lambda: controller.show_page_from_sidebar("Từ vựng", []), 
+        padx=40
     )
-
     courses_sub = [btn_vocab]
     courses_open = False
-
     def toggle_courses():
         nonlocal courses_open
         if courses_open:
@@ -111,10 +110,9 @@ def create_sidebar_left(root, show_in_main):
             for b in courses_sub:
                 b.pack(fill="x", pady=2, after=btn_courses)
             courses_open = True
-
     btn_courses.config(command=toggle_courses)
 
-    # === MỤC LUYỆN TẬP ===
+    # === MỤC LUYỆN TẬP (Giữ nguyên logic toggle) ===
     btn_practice = make_button(
         sidebar_left, "Luyện tập", icons["practice"]
     )
@@ -122,16 +120,18 @@ def create_sidebar_left(root, show_in_main):
 
     btn_reading = make_button(
         sidebar_left, "Reading", icons["book"],
-        cmd=lambda: show_in_main("Reading", get_all_units()), padx=40
+        # --- THAY ĐỔI 4: Gọi controller ---
+        cmd=lambda: controller.show_page_from_sidebar("Reading", []), 
+        padx=40
     )
     btn_listening = make_button(
         sidebar_left, "Listening", icons["earphone"],
-        cmd=lambda: show_in_main("Listening", get_all_units()), padx=40
+        # --- THAY ĐỔI 5: Gọi controller ---
+        cmd=lambda: controller.show_page_from_sidebar("Listening", []), 
+        padx=40
     )
-
     practice_sub = [btn_reading, btn_listening]
     practice_open = False
-
     def toggle_practice():
         nonlocal practice_open
         if practice_open:
@@ -142,10 +142,9 @@ def create_sidebar_left(root, show_in_main):
             for b in practice_sub:
                 b.pack(fill="x", pady=2, after=btn_practice)
             practice_open = True
-
     btn_practice.config(command=toggle_practice)
 
-    # === MỤC TRÒ CHƠI ===
+    # === MỤC TRÒ CHƠI (Giữ nguyên logic toggle) ===
     btn_trochoi = make_button(
         sidebar_left, "Trò chơi", icons["trochoi"]
     )
@@ -153,20 +152,23 @@ def create_sidebar_left(root, show_in_main):
 
     # Nút con "Chơi Game"
     btn_game = make_button(
-        sidebar_left, "Chơi Game", icons["book"], # Dùng icon "book"
-        cmd=lambda: show_in_main("Game", get_all_units()), padx=40
+        sidebar_left, "Chơi Game", icons["book"], 
+        # --- THAY ĐỔI 6: Gọi controller ---
+        cmd=lambda: controller.show_page_from_sidebar("Game", []), 
+        padx=40
     )
 
     # Nút con "Lịch sử"
     btn_history = make_button(
-        sidebar_left, "Lịch sử", icons["history"], # Dùng icon "history" mới load
-        cmd=lambda: show_in_main("lịch sử", get_all_units()), padx=40
+        sidebar_left, "Lịch sử", icons["history"],
+        # --- THAY ĐỔI 7: Gọi controller ---
+        cmd=lambda: controller.show_page_from_sidebar("lịch sử", []), 
+        padx=40
     )
 
-    # Logic toggle MỚI cho Trò chơi
-    trochoi_sub = [btn_history, btn_game] 
+    # (Logic toggle giữ nguyên)
+    trochoi_sub = [btn_history, btn_game] # (Bạn đã đảo thứ tự 2 nút này, tôi giữ nguyên)
     trochoi_open = False
-
     def toggle_trochoi():
         nonlocal trochoi_open
         if trochoi_open:
@@ -175,42 +177,41 @@ def create_sidebar_left(root, show_in_main):
             trochoi_open = False
         else:
             for b in trochoi_sub:
-                # Gắn vào sau nút "Trò chơi"
                 b.pack(fill="x", pady=2, after=btn_trochoi) 
             trochoi_open = True
-
-    # Gán hàm toggle MỚI cho nút "Trò chơi"
     btn_trochoi.config(command=toggle_trochoi)
 
     # === CÁC MỤC KHÁC ===
     btn_rank = make_button(
         sidebar_left, "Xếp hạng", icons["ranking"],
-        cmd=lambda: show_in_main("Xếp hạng", [])
+        # --- THAY ĐỔI 8: Gọi controller ---
+        cmd=lambda: controller.show_page_from_sidebar("Xếp hạng", [])
     )
     btn_rank.pack(fill="x", pady=5)
 
     btn_more = make_button(
         sidebar_left, "Xem thêm", icons["more"],
-        lambda: show_in_main("Xem thêm", ["Profile","Security"])
+        # --- THAY ĐỔI 9: Gọi controller ---
+        lambda: controller.show_page_from_sidebar("Xem thêm", [])
     )
     btn_more.pack(fill="x", pady=5)
 
-    # === Account toggle ===
+    # === Account toggle (Giữ nguyên logic toggle) ===
     btn_account = make_button(sidebar_left, "Tài khoản", icons["profile"])
     btn_account.pack(fill="x", pady=5)
 
     btn_profile = make_button(
         sidebar_left, "Hồ sơ", icons["profile1"],
-        cmd=lambda: show_in_main("Hồ sơ", ["Thông tin cá nhân"]), padx=40
+        # --- THAY ĐỔI 10: Gọi controller ---
+        cmd=lambda: controller.show_page_from_sidebar("Hồ sơ", []), 
+        padx=40
     )
     btn_logout = make_button(
         sidebar_left, "Đăng xuất", icons["logout"],
         cmd=root.quit, padx=40
     )
-
     account_sub = [btn_profile, btn_logout]
     account_open = False
-
     def toggle_account():
         nonlocal account_open
         if account_open:
@@ -221,10 +222,9 @@ def create_sidebar_left(root, show_in_main):
             for b in account_sub:
                 b.pack(fill="x", pady=2, after=btn_account)
             account_open = True
-
     btn_account.config(command=toggle_account)
 
-    # === Toggle Sidebar ===
+    # === Toggle Sidebar (Giữ nguyên logic) ===
     def toggle_sidebar(event=None):
         if not collapsed[0]:
             # Đóng sidebar
@@ -247,6 +247,13 @@ def create_sidebar_left(root, show_in_main):
             if practice_open:
                 for b in practice_sub:
                     b.pack(fill="x", pady=2, after=btn_practice)
+            
+            # --- THAY ĐỔI 11: Thêm lại nút Trò chơi khi mở ---
+            btn_trochoi.pack(fill="x", pady=5)
+            if trochoi_open:
+                for b in trochoi_sub:
+                    b.pack(fill="x", pady=2, after=btn_trochoi)
+            # --- Hết ---
 
             btn_rank.pack(fill="x", pady=5)
             btn_more.pack(fill="x", pady=5)

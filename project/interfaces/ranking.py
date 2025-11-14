@@ -2,25 +2,24 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 import os
-
-# --- IMPORT DB ---
 from db.db import db 
 
-class Ranking(tk.Frame):
-    def __init__(self, master):
-        super().__init__(master, bg="#f0f0f0")
+# ==========================================================
+# ===        CLASS TRANG XẾP HẠNG (RANKINGPAGE)          ===
+# ==========================================================
+class RankingPage(tk.Frame): 
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg="#f0f0f0")
+        self.controller = controller
 
-        # (Phần Style và UI giữ nguyên)
         style = ttk.Style(self)
         style.theme_use("clam")
-        
         style.configure("Treeview.Heading",
                         font=("Arial", 14, "bold"),
                         background="#2c3e50",
                         foreground="white",
                         relief="flat")
         style.map("Treeview.Heading", background=[('active', '#34495e')])
-        
         style.configure("Treeview",
                         highlightthickness=0,
                         bd=0,
@@ -53,16 +52,17 @@ class Ranking(tk.Frame):
         self.tree.tag_configure('evenrow', background='#E8F5FF')
 
         self.avatar_images = []
-        self.populate_ranking()
+        self.refresh()
 
-    def populate_ranking(self):
-        """Hàm lấy BXH (điểm cao nhất) từ DB và chèn vào Treeview."""
+    def refresh(self):
+        """Hàm này tải/tải lại dữ liệu từ DB, được gọi bởi controller."""
         
-        db_conn = db()
+        for i in self.tree.get_children():
+            self.tree.delete(i)
+        self.avatar_images = []
+            
+        db_conn = self.controller.db_class()
         
-        # --- THAY ĐỔI: CẬP NHẬT CÂU TRUY VẤN SQL ---
-        # Sửa tên bảng: GameHistory -> games
-        # Sửa tên cột: H.user_id -> H.game_user_id
         query = """
             SELECT 
                 U.user_name,
@@ -88,7 +88,6 @@ class Ranking(tk.Frame):
             self.tree.insert('', 'end', values=("", "Chưa có dữ liệu", ""))
             return
 
-        # (Phần lặp và chèn dữ liệu giữ nguyên)
         for i, row in df.iterrows():
             name = row['user_name']
             score = row['highest_score'] 

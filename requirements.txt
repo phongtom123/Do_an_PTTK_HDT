@@ -1,4 +1,0 @@
-psycopg2
-SQLAlchemy == 2.0.43
-pandas == 2.3.2
-dotenv
